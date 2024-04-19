@@ -29,6 +29,7 @@ class frequency extends StatefulWidget {
 
 class _frequencyState extends State<frequency> {
   TextEditingController txtHBDController = TextEditingController();
+  TextEditingController txtEndController = TextEditingController();
   TextEditingController NameMedicineController = TextEditingController();
   TextEditingController MedicineQuantity = TextEditingController();
 
@@ -94,6 +95,78 @@ class _frequencyState extends State<frequency> {
         setState(() {
           var strDay = DateFormat('dd/MM/yyyy').format(date!);
           txtHBDController.text = strDay;
+          FocusScopeNode currentFocus = FocusScope.of(context);
+          if (!currentFocus.hasPrimaryFocus) {
+            currentFocus.unfocus();
+          }
+        });
+      });
+    });
+  }
+
+
+  void dateEnd(BuildContext context) {
+    FocusScopeNode currentFocus = FocusScope.of(context);
+    if (!currentFocus.hasPrimaryFocus) {
+      currentFocus.unfocus();
+    }
+    Timer(const Duration(milliseconds: 400), () {
+      int yearCurrent = DateTime.now().year + 1;
+      showRoundedDatePicker(
+        borderRadius: 25,
+        styleDatePicker: MaterialRoundedDatePickerStyle(
+          textStyleDayHeader: const TextStyle(
+              fontFamily: 'SukhumvitSet-Bold',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: const Color.fromRGBO(88, 135, 255, 1)),
+          textStyleDayOnCalendar: const TextStyle(
+              fontFamily: 'SukhumvitSet-Bold',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Color.fromRGBO(88, 135, 255, 1)),
+          paddingMonthHeader: const EdgeInsets.all(10),
+          sizeArrow: 40,
+          colorArrowPrevious: const Color.fromRGBO(88, 135, 255, 1),
+          colorArrowNext: const Color.fromRGBO(88, 135, 255, 1),
+          textStyleMonthYearHeader: const TextStyle(
+              fontFamily: 'SukhumvitSet-Bold',
+              fontSize: 22,
+              fontWeight: FontWeight.w500,
+              color: Colors.black),
+          textStyleButtonPositive: const TextStyle(
+              fontFamily: 'SukhumvitSet-Bold',
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xff8B939A)),
+          textStyleButtonNegative: const TextStyle(
+              fontFamily: 'SukhumvitSet-Bold',
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xff8B939A)),
+        ),
+        theme: ThemeData(
+          primaryColor: const Color.fromRGBO(88, 135, 255, 1),
+          hintColor: const Color.fromRGBO(88, 135, 255, 1),
+          textTheme: const TextTheme(
+            caption: TextStyle(
+                fontFamily: 'SukhumvitSet-Bold',
+                fontWeight: FontWeight.w500,
+                color: Color(0xff8B939A)),
+          ),
+        ),
+        // era: EraMode.BUDDHIST_YEAR,
+        context: context,
+        height: 330,
+        fontFamily: 'SukhumvitSet-Bold',
+        // locale: const Locale("th"),
+        initialDate: DateTime.now(),
+        firstDate: DateTime(1850),
+        lastDate: DateTime(yearCurrent),
+      ).then((date) {
+        setState(() {
+          var strDay = DateFormat('dd/MM/yyyy').format(date!);
+          txtEndController.text = strDay;
           FocusScopeNode currentFocus = FocusScope.of(context);
           if (!currentFocus.hasPrimaryFocus) {
             currentFocus.unfocus();
@@ -184,6 +257,51 @@ class _frequencyState extends State<frequency> {
                                 ),
                                 filled: true,
                                 hintText: "วันที่เริ่มทาน",
+                                hintStyle: TextStyle(
+                                  fontSize: 22,
+                                  fontFamily: 'SukhumvitSet-Medium',
+                                  color: Colors.grey[800],
+                                ),
+                                fillColor:
+                                    const Color.fromRGBO(211, 234, 250, 1),
+                              ),
+                            ),
+                            const SizedBox(
+                                height:
+                                    10), // Adjust the spacing between "เริ่มต้น" and TextField
+                            const Text(
+                              "วันสุดท้าย",
+                              style: TextStyle(
+                                fontSize: 23.0,
+                                fontFamily: 'SukhumvitSet-Medium',
+                                color: Colors.black,
+                              ),
+                            ),
+                            TextField(
+                              onTap: () {
+                                dateEnd(context);
+                              },
+                              controller: txtEndController,
+                              readOnly: true,
+                              style: const TextStyle(
+                                fontSize: 25.0,
+                                fontFamily: 'SukhumvitSet-Bold',
+                                color: Colors.black,
+                              ),
+                              decoration: InputDecoration(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 10.0,
+                                  horizontal: 15,
+                                ),
+                                border: const OutlineInputBorder(
+                                  borderRadius: BorderRadius.all(
+                                    Radius.circular(20.0),
+                                  ),
+                                  borderSide: BorderSide(
+                                      width: 0, style: BorderStyle.none),
+                                ),
+                                filled: true,
+                                hintText: "วันสุดท้ายที่ทาน",
                                 hintStyle: TextStyle(
                                   fontSize: 22,
                                   fontFamily: 'SukhumvitSet-Medium',
@@ -287,6 +405,7 @@ class _frequencyState extends State<frequency> {
                           medicineQuantity: widget.medicineQuantity,
                           selectedDropdownValue: widget.selectedDropdownValue,
                           startDate: txtHBDController.text,
+                          endDate: txtEndController.text
                         ),
                       ),
                     );

@@ -6,9 +6,13 @@ import 'package:flutter_application_1/listmedicine.dart';
 import 'package:flutter_application_1/screen/homescreen.dart';
 import 'package:flutter_application_1/ui/Addtime.dart';
 import 'package:flutter_application_1/ui/Home.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+import 'arm/local_notifications.dart';
 import 'firebase_noti/firebase_api.dart';
 
+FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,7 +25,23 @@ void main() async {
   )
   : await Firebase.initializeApp();
   await FirebaseApi().initNotifications();
-  runApp(const MyApp());
+  
+  // ทำให้เมื่อกดเข้ามาจะเข้าหน้าหลัก
+  WidgetsFlutterBinding.ensureInitialized();
+  await LocalNotifications.init();
+
+  // handle in terminated state
+  var initialNotification =
+      await flutterLocalNotificationsPlugin.getNotificationAppLaunchDetails();
+  if (initialNotification?.didNotificationLaunchApp == true) {
+    // LocalNotifications.onClickNotification.stream.listen((event) {
+    Future.delayed(Duration(seconds: 1), () {
+      // print(event);
+      runApp(const MyApp()); // You might need to handle routing differently here depending on your app structure
+    });
+  } else {
+    runApp(const MyApp());
+  }
 }
 
 class MyApp extends StatelessWidget {

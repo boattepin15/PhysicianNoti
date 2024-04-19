@@ -1,22 +1,30 @@
+import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/ui/Addmedicine.dart';
 import 'package:flutter_application_1/ui/Home.dart';
 import 'package:flutter_application_1/ui/freq.dart';
+import 'package:intl/intl.dart';
+import 'package:uuid/uuid.dart';
+
+import '../arm/local_notifications.dart';
 
 class Addtime extends StatefulWidget {
   final String nameMedicine;
   final String medicineQuantity;
   final String selectedDropdownValue;
   final String startDate;
-  const Addtime({
-    Key? key,
-    required this.nameMedicine,
-    required this.medicineQuantity,
-    required this.selectedDropdownValue,
-    required this.startDate,
-  }) : super(key: key);
+  final String endDate;
+  const Addtime(
+      {Key? key,
+      required this.nameMedicine,
+      required this.medicineQuantity,
+      required this.selectedDropdownValue,
+      required this.startDate,
+      required this.endDate})
+      : super(key: key);
 
   @override
   State<Addtime> createState() => _AddtimeState();
@@ -31,17 +39,54 @@ class _AddtimeState extends State<Addtime> {
 
   TimeOfDay selectedTime = TimeOfDay.now();
   List<TimeOfDay> selectedTimes = [];
+  int generateRandomInt() {
+    var random = Random();
+    return random.nextInt(10001); // สุ่มจำนวนเต็มระหว่าง 0 ถึง 10000
+  }
+
   Future<void> saveDataToFirebase() async {
     CollectionReference medications = _firestore.collection('medicine');
     List<String> timesList = selectedTimes.map((time) {
       // Convert TimeOfDay to a string representation of time (HH:mm)
       return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
     }).toList();
+    // ตัวที่เพิ่มเข้ามา Arm
+    DateTime dateTime = DateFormat("dd/MM/yyyy").parse(widget.startDate);
+    DateTime dateTimeend = DateFormat("dd/MM/yyyy").parse(widget.endDate);
+    // int day = dateTime.day;
+    // int month = dateTime.month;
+    // int year = dateTime.year;
+    DateTime startDate = dateTime; // เริ่มต้นวันที่
+    DateTime endDate = dateTimeend; // สิ้นสุดวันที่
+    for (DateTime date = startDate;
+        date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
+        date = date.add(Duration(days: 1))) {
+      for (String time in timesList) {
+        List<String> timeParts = time.split(":");
+        int hour = int.parse(timeParts[0]);
+        int minute = int.parse(timeParts[1]);
+        print("${date.day} ${date.month} ${date.year} ${hour} ${minute}");
+        await LocalNotifications.showScheduleNotification(
+          id: generateRandomInt(),
+          title: "แจ้งเตือน",
+          body:
+              "ชื่อ${widget.nameMedicine} ทานต่อครั้ง${widget.medicineQuantity} หน่วยยา ${widget.selectedDropdownValue}",
+          payload: "test 1",
+          day: date.day,
+          month: date.month,
+          year: date.year,
+          hour: hour,
+          minute: minute,
+        );
+      }
+    }
+    print("ooooo ${timesList.length}");
     Map<String, dynamic> documentData = {
       'ชื่อยา': widget.nameMedicine,
       'ปริมาณยาที่ทานต่อครั้ง': widget.medicineQuantity,
       'หน่วยยา': widget.selectedDropdownValue,
       'วันที่เริ่มทาน': widget.startDate,
+      'วันสุดท้ายที่ทาน': widget.endDate,
       'เวลาแจ้งเตือน': timesList,
     };
     try {
@@ -268,9 +313,8 @@ class _AddtimeState extends State<Addtime> {
                     ),
                   ),
                   onPressed: () async {
-                    Navigator.push(
-                        context,
-                         MaterialPageRoute(builder: (context) => Home()));
+                    Navigator.push(context,
+                        MaterialPageRoute(builder: (context) => Home()));
                     await saveDataToFirebase();
                   },
                   child: const Row(
