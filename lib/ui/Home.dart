@@ -54,7 +54,10 @@ class _HomeState extends State<Home> {
           'ชื่อ-นามสกุล',
           style: TextStyle(fontSize: 24),
         ),
-        leading: const Icon(Icons.person,size: 35,),
+        leading: const Icon(
+          Icons.person,
+          size: 35,
+        ),
         actions: [
           IconButton(
             icon: const Icon(
@@ -97,7 +100,6 @@ class _HomeState extends State<Home> {
                     weekDayStringType: WeekDayStringTypes.SHORT,
                     monthStringType: MonthStringTypes.FULL,
                     headerTextColor: Colors.black),
-
                 calendarType: CalendarType.GREGORIAN,
                 calendarLanguage: 'en',
                 onInit: () {
@@ -184,45 +186,63 @@ class _HomeState extends State<Home> {
                     return ListView.builder(
                       itemCount: data.size,
                       itemBuilder: (context, index) {
-                        return Container(
-                          margin: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-
-                          ),
-                          child: Card(
-                            elevation: 3,
-                            margin: const EdgeInsets.only(left: 10, right: 10, bottom: 5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20),
+                        DateTime startDateTime = DateFormat("dd/MM/yyyy")
+                            .parse(data.docs[index]['วันที่เริ่มทาน']);
+                        DateTime endDateTime = DateFormat("dd/MM/yyyy")
+                            .parse(data.docs[index]['วันสุดท้ายที่ทาน']);
+                        DateTime selectDateTime = DateTime(dateOutputDate.year,
+                            dateOutputDate.month, dateOutputDate.day);
+                        print(
+                            "${selectDateTime.year} ${dateOutputDate.month} ${dateOutputDate.day}");
+                        if ((selectDateTime.isAfter(startDateTime) ||
+                                selectDateTime
+                                    .isAtSameMomentAs(startDateTime)) &&
+                            (selectDateTime.isBefore(endDateTime) ||
+                                selectDateTime.isAtSameMomentAs(endDateTime))) {
+                          print("อยู่ในช่วง");
+                          return Container(
+                            margin: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Text(
-                                    '${data.docs[index]['ชื่อยา']} ${data.docs[index]['ปริมาณยาที่ทานต่อครั้ง']} ${data.docs[index]['หน่วยยา']} ',
-                                    style: const TextStyle(fontSize: 24),
+                            child: Card(
+                              elevation: 3,
+                              margin: const EdgeInsets.only(
+                                  left: 10, right: 10, bottom: 5),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(10),
+                                    child: Text(
+                                      '${data.docs[index]['ชื่อยา']} ${data.docs[index]['ปริมาณยาที่ทานต่อครั้ง']} ${data.docs[index]['หน่วยยา']} ',
+                                      style: const TextStyle(fontSize: 24),
+                                    ),
                                   ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(10), // เพิ่ม padding รอบ Text
-                                  child: Text(
-                                    'เวลาทานยา ${data.docs[index]['เวลาแจ้งเตือน']}',
-                                    style: const TextStyle(fontSize: 18),
+                                  Padding(
+                                    padding: const EdgeInsets.all(
+                                        10), // เพิ่ม padding รอบ Text
+                                    child: Text(
+                                      'เวลาทานยา ${data.docs[index]['เวลาแจ้งเตือน']}',
+                                      style: const TextStyle(fontSize: 18),
+                                    ),
                                   ),
-                                ),
-                                const Padding(padding: EdgeInsets.all(10),
-                                child: Text(
-                                  'ทานยา ไม่ได้ทานยา',
-                                  style: TextStyle(fontSize: 18),
-                                ),
+                                  const Padding(
+                                    padding: EdgeInsets.all(10),
+                                    child: Text(
+                                      'ทานยา ไม่ได้ทานยา',
+                                      style: TextStyle(fontSize: 18),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                              ],
-                            ),
-                          ),
-                        );
+                          );
+                        }
+                        return Container();
                       },
                     );
                   },
@@ -271,5 +291,4 @@ class _HomeState extends State<Home> {
       ),
     );
   }
-  
 }
