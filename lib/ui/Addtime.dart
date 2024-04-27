@@ -58,9 +58,12 @@ class _AddtimeState extends State<Addtime> {
     // int year = dateTime.year;
     DateTime startDate = dateTime; // เริ่มต้นวันที่
     DateTime endDate = dateTimeend; // สิ้นสุดวันที่
+    int number = 1;
     for (DateTime date = startDate;
         date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
         date = date.add(Duration(days: 1))) {
+        print(number);
+        number +=1;
       for (String time in timesList) {
         List<String> timeParts = time.split(":");
         int hour = int.parse(timeParts[0]);
@@ -80,17 +83,22 @@ class _AddtimeState extends State<Addtime> {
         );
       }
     }
-    print("ooooo ${timesList.length}");
+    
+    var uuid = Uuid().v4();
     Map<String, dynamic> documentData = {
+      'id': uuid,
       'ชื่อยา': widget.nameMedicine,
       'ปริมาณยาที่ทานต่อครั้ง': widget.medicineQuantity,
       'หน่วยยา': widget.selectedDropdownValue,
       'วันที่เริ่มทาน': widget.startDate,
       'วันสุดท้ายที่ทาน': widget.endDate,
       'เวลาแจ้งเตือน': timesList,
+      'สถานะ': List.filled(number-1, 'ว่าง')
     };
     try {
-      await medications.add(documentData);
+     
+      await medications.doc(uuid).set(documentData);
+      // await medications.add(documentData);
       print('Data added to Firestore successfully!');
     } catch (e) {
       print('Error adding data to Firestore: $e');

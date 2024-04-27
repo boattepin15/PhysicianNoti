@@ -44,6 +44,21 @@ class _HomeState extends State<Home> {
 
   var dateOutputDate = DateTime.now();
   var selectedDate = "";
+  Future<void> saveDataToFirebase({required String id,required List<dynamic> state}) async {
+    // final reference = FirebaseFirestore.instance.doc('products/${id}');
+    CollectionReference medications = FirebaseFirestore.instance.collection('medicine');
+    Map<String, dynamic> documentData = {
+      'สถานะ': state
+    };
+    try {
+      // await reference.set(documentData);
+
+      await medications.doc(id).update(documentData);
+      print('Data added to Firestore successfully!');
+    } catch (e) {
+      print('Error adding data to Firestore: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -190,10 +205,12 @@ class _HomeState extends State<Home> {
                             .parse(data.docs[index]['วันที่เริ่มทาน']);
                         DateTime endDateTime = DateFormat("dd/MM/yyyy")
                             .parse(data.docs[index]['วันสุดท้ายที่ทาน']);
+                        
                         DateTime selectDateTime = DateTime(dateOutputDate.year,
                             dateOutputDate.month, dateOutputDate.day);
+                        int allday =  dateOutputDate.day - startDateTime.day;
                         print(
-                            "${selectDateTime.year} ${dateOutputDate.month} ${dateOutputDate.day}");
+                            "000 ${selectDateTime.year} ${dateOutputDate.month} ${dateOutputDate.day}");
                         if ((selectDateTime.isAfter(startDateTime) ||
                                 selectDateTime
                                     .isAtSameMomentAs(startDateTime)) &&
@@ -225,18 +242,85 @@ class _HomeState extends State<Home> {
                                   Padding(
                                     padding: const EdgeInsets.all(
                                         10), // เพิ่ม padding รอบ Text
-                                    child: Text(
-                                      'เวลาทานยา ${data.docs[index]['เวลาแจ้งเตือน']}',
-                                      style: const TextStyle(fontSize: 18),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              0, 0, 5, 0),
+                                          child: Text(
+                                            'เวลาทานยา:',
+                                            style:
+                                                const TextStyle(fontSize: 18),
+                                          ),
+                                        ),
+                                        Column(
+                                          children: [
+                                            for (int number = 0;
+                                                number <
+                                                    data
+                                                        .docs[index]
+                                                            ['เวลาแจ้งเตือน']
+                                                        .length;
+                                                number++)
+                                              Text(
+                                                'ครั้งที่ ${number + 1} เวลา ${data.docs[index]['เวลาแจ้งเตือน'][number]}',
+                                                style: const TextStyle(
+                                                    fontSize: 18),
+                                              ),
+                                          ],
+                                        )
+                                      ],
                                     ),
                                   ),
-                                  const Padding(
+                                  Padding(
                                     padding: EdgeInsets.all(10),
                                     child: Text(
-                                      'ทานยา ไม่ได้ทานยา',
+                                      '${data.docs[index]['สถานะ'][allday] == "ว่าง" ? "" : "ทานยา: ${data.docs[index]['สถานะ'][allday]}"}',
                                       style: TextStyle(fontSize: 18),
                                     ),
                                   ),
+                                  '${data.docs[index]['สถานะ'][allday]}' == "ว่าง"? Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    mainAxisSize: MainAxisSize.max,
+                                    children: [
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
+                                          child: ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.green,
+                                                  foregroundColor: Colors.white),
+                                              onPressed: () async {
+                                                List<dynamic> datastatus = data.docs[index]['สถานะ'];
+                                                datastatus[allday] = "ทานยาแล้ว";
+                                                await saveDataToFirebase(id:"${data.docs[index]['id']}",state: datastatus);
+
+                                              },
+                                              child: Text("รับยา",style:
+                                                const TextStyle(fontSize: 18))),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.fromLTRB(3, 0, 3, 0),
+                                          child: ElevatedButton(
+                                              style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.red,
+                                                  foregroundColor: Colors.white),
+                                              onPressed: () async {
+                                                List<dynamic> datastatus = data.docs[index]['สถานะ'];
+                                                datastatus[allday] = "ปฏิเสธการทานยา";
+                                                await saveDataToFirebase(id:"${data.docs[index]['id']}",state: datastatus);
+                                              },
+                                              child: Text("ปฏิเสธ",style:
+                                                const TextStyle(fontSize: 18))),
+                                        ),
+                                      ),
+                                    ],
+                                  ) : Container(),
                                 ],
                               ),
                             ),
