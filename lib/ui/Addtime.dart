@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -59,16 +60,20 @@ class _AddtimeState extends State<Addtime> {
     DateTime startDate = dateTime; // เริ่มต้นวันที่
     DateTime endDate = dateTimeend; // สิ้นสุดวันที่
     int number = 1;
+    int numberitem = 1;
+    var uuid = Uuid().v4();
     for (DateTime date = startDate;
         date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
         date = date.add(Duration(days: 1))) {
         print(number);
         number +=1;
+        numberitem = 1;
       for (String time in timesList) {
         List<String> timeParts = time.split(":");
         int hour = int.parse(timeParts[0]);
         int minute = int.parse(timeParts[1]);
-        print("${date.day} ${date.month} ${date.year} ${hour} ${minute}");
+        print("${date.day} ${date.month} ${date.year} ${hour} ${minute} เวลา ${numberitem}");
+        numberitem +=1;
         await LocalNotifications.showScheduleNotification(
           id: generateRandomInt(),
           title: "แจ้งเตือน",
@@ -84,7 +89,8 @@ class _AddtimeState extends State<Addtime> {
       }
     }
     
-    var uuid = Uuid().v4();
+    
+    String listToString = jsonEncode(List.generate(number-1, (_) => List.filled(numberitem-1, 'ว่าง')));
     Map<String, dynamic> documentData = {
       'id': uuid,
       'ชื่อยา': widget.nameMedicine,
@@ -93,7 +99,7 @@ class _AddtimeState extends State<Addtime> {
       'วันที่เริ่มทาน': widget.startDate,
       'วันสุดท้ายที่ทาน': widget.endDate,
       'เวลาแจ้งเตือน': timesList,
-      'สถานะ': List.filled(number-1, 'ว่าง')
+      'สถานะ': listToString
     };
     try {
      

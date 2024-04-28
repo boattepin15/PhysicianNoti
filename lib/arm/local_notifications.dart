@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -10,6 +11,13 @@ class LocalNotifications {
 
 // on tap on any notification
   static void onNotificationTap(NotificationResponse notificationResponse) {
+    print("00000000000000000${onNotificationTap}");
+    onClickNotification.add(notificationResponse.payload!);
+  }
+
+  static void onNotificationClick(NotificationResponse notificationResponse) {
+    print("777777777777777 onNotificationClick ${notificationResponse.id}");
+    
     onClickNotification.add(notificationResponse.payload!);
   }
 
@@ -38,7 +46,7 @@ class LocalNotifications {
 
     _flutterLocalNotificationsPlugin.initialize(initializationSettings,
         onDidReceiveNotificationResponse: onNotificationTap,
-        onDidReceiveBackgroundNotificationResponse: onNotificationTap);
+        onDidReceiveBackgroundNotificationResponse: onNotificationClick);
   }
 
   // show a simple notification
@@ -93,7 +101,6 @@ class LocalNotifications {
   }) async {
     tz.initializeTimeZones();
     DateTime now = DateTime.now();
-    
 
     // สร้าง DateTime สำหรับวันและเวลาที่กำหนด
     DateTime scheduledDateTime = DateTime(year, month, day, hour, minute);
@@ -112,7 +119,14 @@ class LocalNotifications {
                 channelDescription: 'your channel description',
                 importance: Importance.max,
                 priority: Priority.high,
-                ticker: 'ticker')),
+                ticker: 'ticker',
+                ongoing: true,
+                autoCancel: false,
+            //     actions: [
+            //   AndroidNotificationAction('accept', 'Accept',
+            //       titleColor: Colors.green),
+            // ]
+            )),
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,

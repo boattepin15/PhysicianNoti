@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -44,12 +46,13 @@ class _HomeState extends State<Home> {
 
   var dateOutputDate = DateTime.now();
   var selectedDate = "";
-  Future<void> saveDataToFirebase({required String id,required List<dynamic> state}) async {
+  Future<void> saveDataToFirebase(
+      {required String id, required List<List<String>> state}) async {
     // final reference = FirebaseFirestore.instance.doc('products/${id}');
-    CollectionReference medications = FirebaseFirestore.instance.collection('medicine');
-    Map<String, dynamic> documentData = {
-      'สถานะ': state
-    };
+    String listToString1 = jsonEncode(state);
+    CollectionReference medications =
+        FirebaseFirestore.instance.collection('medicine');
+    Map<String, dynamic> documentData = {'สถานะ': listToString1};
     try {
       // await reference.set(documentData);
 
@@ -60,15 +63,48 @@ class _HomeState extends State<Home> {
     }
   }
 
+  Future<String> fetchData() async {
+    CollectionReference medications =
+        FirebaseFirestore.instance.collection('name');
+
+    try {
+      // ดึงเอกสารและรอการเสร็จสิ้น
+      DocumentSnapshot snapshot =
+          await medications.doc("onRm6P2r7cXVPzFM09bS").get();
+
+      if (snapshot.exists) {
+        // แปลงข้อมูลจากเอกสารเป็น Map และเข้าถึงฟิลด์ที่ต้องการ
+        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+        return data['name']; // สมมติว่า 'name' คือชื่อฟิลด์ที่คุณต้องการ
+      } else {
+        return "No data found";
+      }
+    } catch (e) {
+      // จัดการกับข้อผิดพลาดที่อาจเกิดขึ้น
+      return "Error fetching data: $e";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromRGBO(88, 135, 255, 1),
-        title: const Text(
-          'ชื่อ-นามสกุล',
-          style: TextStyle(fontSize: 24),
-        ),
+        title: FutureBuilder<String>(
+            future: fetchData(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                    child: CircularProgressIndicator()); // แสดงสัญญาณการโหลด
+              } else if (snapshot.hasError) {
+                return Center(child: Text('เกิดข้อผิดพลาด: ${snapshot.error}'));
+              } else {
+                return Text(
+                  '${snapshot.data}',
+                  style: TextStyle(fontSize: 24),
+                ); // แสดงข้อมูลที่ได้รับ
+              }
+            }),
         leading: const Icon(
           Icons.person,
           size: 35,
@@ -205,10 +241,10 @@ class _HomeState extends State<Home> {
                             .parse(data.docs[index]['วันที่เริ่มทาน']);
                         DateTime endDateTime = DateFormat("dd/MM/yyyy")
                             .parse(data.docs[index]['วันสุดท้ายที่ทาน']);
-                        
+
                         DateTime selectDateTime = DateTime(dateOutputDate.year,
                             dateOutputDate.month, dateOutputDate.day);
-                        int allday =  dateOutputDate.day - startDateTime.day;
+                        int allday = dateOutputDate.day - startDateTime.day;
                         print(
                             "000 ${selectDateTime.year} ${dateOutputDate.month} ${dateOutputDate.day}");
                         if ((selectDateTime.isAfter(startDateTime) ||
@@ -217,114 +253,124 @@ class _HomeState extends State<Home> {
                             (selectDateTime.isBefore(endDateTime) ||
                                 selectDateTime.isAtSameMomentAs(endDateTime))) {
                           print("อยู่ในช่วง");
-                          return Container(
-                            margin: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Card(
-                              elevation: 3,
-                              margin: const EdgeInsets.only(
-                                  left: 10, right: 10, bottom: 5),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: Text(
-                                      '${data.docs[index]['ชื่อยา']} ${data.docs[index]['ปริมาณยาที่ทานต่อครั้ง']} ${data.docs[index]['หน่วยยา']} ',
-                                      style: const TextStyle(fontSize: 24),
-                                    ),
+                          List<List<String>> stateTime =
+                              List<List<String>>.from(jsonDecode(data.docs[index]['สถานะ'])
+                                  .map((list) => List<String>.from(list)));
+                          print("iiiiii${stateTime}");
+                          // for (int number = 0;number < data.docs[index]['เวลาแจ้งเตือน'].length;number++)
+                          print(
+                              "88888/${data.docs[index]['เวลาแจ้งเตือน'].length}");
+                          return ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount:
+                                  data.docs[index]['เวลาแจ้งเตือน'].length,
+                              itemBuilder: (context, number) {
+                                return Container(
+                                  margin: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(
-                                        10), // เพิ่ม padding รอบ Text
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
+                                  child: Card(
+                                    elevation: 3,
+                                    margin: const EdgeInsets.only(
+                                        left: 10, right: 10, bottom: 5),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Column(
                                       crossAxisAlignment:
                                           CrossAxisAlignment.start,
                                       children: [
                                         Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                              0, 0, 5, 0),
+                                          padding: const EdgeInsets.all(10),
                                           child: Text(
-                                            'เวลาทานยา:',
+                                            '${data.docs[index]['ชื่อยา']} ${data.docs[index]['ปริมาณยาที่ทานต่อครั้ง']} ${data.docs[index]['หน่วยยา']} ',
                                             style:
-                                                const TextStyle(fontSize: 18),
+                                                const TextStyle(fontSize: 24),
                                           ),
                                         ),
-                                        Column(
-                                          children: [
-                                            for (int number = 0;
-                                                number <
-                                                    data
-                                                        .docs[index]
-                                                            ['เวลาแจ้งเตือน']
-                                                        .length;
-                                                number++)
-                                              Text(
-                                                'ครั้งที่ ${number + 1} เวลา ${data.docs[index]['เวลาแจ้งเตือน'][number]}',
-                                                style: const TextStyle(
-                                                    fontSize: 18),
+                                        Padding(
+                                          padding: const EdgeInsets.all(
+                                              10), // เพิ่ม padding รอบ Text
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.fromLTRB(
+                                                        0, 0, 5, 0),
+                                                child: Text(
+                                                  'เวลาทานยา:',
+                                                  style: const TextStyle(
+                                                      fontSize: 18),
+                                                ),
                                               ),
-                                          ],
-                                        )
+                                              Column(
+                                                children: [
+                                                  Text(
+                                                    'ครั้งที่ ${number + 1} เวลา ${data.docs[index]['เวลาแจ้งเตือน'][number]}',
+                                                    style: const TextStyle(
+                                                        fontSize: 18),
+                                                  ),
+                                                ],
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.all(10),
+                                          child: Text(
+                                            '${stateTime[allday][number] == "ว่าง" ? "" : "ทานยา: ${stateTime[allday][number]}"}',
+                                            style: TextStyle(fontSize: 18),
+                                          ),
+                                        ),
+                                        '${stateTime[allday][number]}' ==
+                                                "ว่าง"
+                                            ? Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceEvenly,
+                                                mainAxisSize: MainAxisSize.max,
+                                                children: [
+                                                  Expanded(
+                                                    child: Padding(
+                                                      padding: const EdgeInsets
+                                                          .fromLTRB(5, 0, 5, 0),
+                                                      child: ElevatedButton(
+                                                          style: ElevatedButton
+                                                              .styleFrom(
+                                                                  backgroundColor:
+                                                                      Colors
+                                                                          .green,
+                                                                  foregroundColor:
+                                                                      Colors
+                                                                          .white),
+                                                          onPressed: () async {
+                                                            stateTime[allday][number] = "ทานยาแล้ว";
+                                                            await saveDataToFirebase(
+                                                                id:
+                                                                    "${data.docs[index]['id']}",
+                                                                state:
+                                                                    stateTime);
+                                                          },
+                                                          child: Text("รับยา",
+                                                              style:
+                                                                  const TextStyle(
+                                                                      fontSize:
+                                                                          18))),
+                                                    ),
+                                                  ),
+                                                ],
+                                              )
+                                            : Container(),
                                       ],
                                     ),
                                   ),
-                                  Padding(
-                                    padding: EdgeInsets.all(10),
-                                    child: Text(
-                                      '${data.docs[index]['สถานะ'][allday] == "ว่าง" ? "" : "ทานยา: ${data.docs[index]['สถานะ'][allday]}"}',
-                                      style: TextStyle(fontSize: 18),
-                                    ),
-                                  ),
-                                  '${data.docs[index]['สถานะ'][allday]}' == "ว่าง"? Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                    mainAxisSize: MainAxisSize.max,
-                                    children: [
-                                      Expanded(
-                                        child: Padding(
-                                          padding: const EdgeInsets.fromLTRB(5, 0, 5, 0),
-                                          child: ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.green,
-                                                  foregroundColor: Colors.white),
-                                              onPressed: () async {
-                                                List<dynamic> datastatus = data.docs[index]['สถานะ'];
-                                                datastatus[allday] = "ทานยาแล้ว";
-                                                await saveDataToFirebase(id:"${data.docs[index]['id']}",state: datastatus);
-
-                                              },
-                                              child: Text("รับยา",style:
-                                                const TextStyle(fontSize: 18))),
-                                        ),
-                                      ),
-                                      Expanded(
-                                        child: Padding(
-                                          padding: const EdgeInsets.fromLTRB(3, 0, 3, 0),
-                                          child: ElevatedButton(
-                                              style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.red,
-                                                  foregroundColor: Colors.white),
-                                              onPressed: () async {
-                                                List<dynamic> datastatus = data.docs[index]['สถานะ'];
-                                                datastatus[allday] = "ปฏิเสธการทานยา";
-                                                await saveDataToFirebase(id:"${data.docs[index]['id']}",state: datastatus);
-                                              },
-                                              child: Text("ปฏิเสธ",style:
-                                                const TextStyle(fontSize: 18))),
-                                        ),
-                                      ),
-                                    ],
-                                  ) : Container(),
-                                ],
-                              ),
-                            ),
-                          );
+                                );
+                              });
                         }
                         return Container();
                       },
