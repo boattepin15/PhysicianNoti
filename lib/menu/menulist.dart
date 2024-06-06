@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/menu/Addprofile.dart';
 import 'package:flutter_application_1/menu/Report.dart';
+import 'package:flutter_application_1/menu/Report2.dart';
 import 'package:flutter_application_1/ui/Home.dart';
 
 class menulist extends StatefulWidget {
@@ -67,7 +68,7 @@ class _menulistState extends State<menulist> {
                   ),
                   Expanded(
                     flex: 5,
-                    child: Text("เพิ่มข้อมูลโปรไฟล์",
+                    child: Text("ข้อมูลโปรไฟล์ผู้ใช้งาน",
                         style: TextStyle(
                             color: Colors.black,
                             fontSize: 25.0,
@@ -165,7 +166,7 @@ class _menulistState extends State<menulist> {
     Navigator.of(context, rootNavigator: !isHorizontalNavigation)
         .push(
       _buildAdaptivePageRoute(
-        builder: (context) => const Report(),
+        builder: (context) => const Report2(),
         fullscreenDialog: !isHorizontalNavigation,
       ),
     )

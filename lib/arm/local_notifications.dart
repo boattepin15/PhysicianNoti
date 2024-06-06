@@ -11,12 +11,11 @@ class LocalNotifications {
 
 // on tap on any notification
   static void onNotificationTap(NotificationResponse notificationResponse) {
-    print("00000000000000000${onNotificationTap}");
+
     onClickNotification.add(notificationResponse.payload!);
   }
 
   static void onNotificationClick(NotificationResponse notificationResponse) {
-    print("777777777777777 onNotificationClick ${notificationResponse.id}");
     
     onClickNotification.add(notificationResponse.payload!);
   }
@@ -49,43 +48,9 @@ class LocalNotifications {
         onDidReceiveBackgroundNotificationResponse: onNotificationClick);
   }
 
-  // show a simple notification
-  static Future showSimpleNotification({
-    required String title,
-    required String body,
-    required String payload,
-  }) async {
-    const AndroidNotificationDetails androidNotificationDetails =
-        AndroidNotificationDetails('your channel id', 'your channel name',
-            channelDescription: 'your channel description',
-            importance: Importance.max,
-            priority: Priority.high,
-            ticker: 'ticker');
-    const NotificationDetails notificationDetails =
-        NotificationDetails(android: androidNotificationDetails);
-    await _flutterLocalNotificationsPlugin
-        .show(0, title, body, notificationDetails, payload: payload);
-  }
+  
 
-  // to show periodic notification at regular interval
-  static Future showPeriodicNotifications({
-    required String title,
-    required String body,
-    required String payload,
-  }) async {
-    const AndroidNotificationDetails androidNotificationDetails =
-        AndroidNotificationDetails('channel 2', 'your channel name',
-            channelDescription: 'your channel description',
-            importance: Importance.max,
-            priority: Priority.high,
-            ticker: 'ticker');
-    const NotificationDetails notificationDetails =
-        NotificationDetails(android: androidNotificationDetails);
-    await _flutterLocalNotificationsPlugin.periodicallyShow(
-        1, title, body, RepeatInterval.everyMinute, notificationDetails,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        payload: payload);
-  }
+  
 
   // to schedule a local notification
   static Future showScheduleNotification({
@@ -107,7 +72,7 @@ class LocalNotifications {
 
     // คำนวณหาผลต่างเวลา
     Duration difference = scheduledDateTime.difference(now);
-    print(difference);
+    print("pppppp ${difference}");
     await _flutterLocalNotificationsPlugin.zonedSchedule(
         id,
         title,

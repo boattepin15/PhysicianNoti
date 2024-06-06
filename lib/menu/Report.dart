@@ -1,7 +1,9 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_application_1/menu/menulist.dart';
 import 'package:intl/intl.dart';
 
@@ -77,18 +79,36 @@ class _ReportState extends State<Report> {
             return Column(
               children: [
                 Container(
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('ข้อมูลยา',
-                          style: TextStyle(
-                              fontSize: 26, fontWeight: FontWeight.bold)),
-                      Text('เวลา',
-                          style: TextStyle(
-                              fontSize: 26, fontWeight: FontWeight.bold)),
-                      Text('สถานะยา',
-                          style: TextStyle(
-                              fontSize: 26, fontWeight: FontWeight.bold)),
+                      Container(
+                        width: 110.0,
+                        child: Align(
+                          alignment: AlignmentDirectional(0, 0),
+                          child: Text('ชื่อยา',
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      Container(
+                        width: 130.0,
+                        child: Align(
+                          alignment: AlignmentDirectional(0, 0),
+                          child: Text('เวลา',
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                      Container(
+                        width: 110.0,
+                        child: Align(
+                          alignment: AlignmentDirectional(0, 0),
+                          child: Text('สถานะยา',
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -117,33 +137,51 @@ class _ReportState extends State<Report> {
                                 physics: NeverScrollableScrollPhysics(),
                                 itemCount: stateTime[number].length,
                                 itemBuilder: (context, numberTime) {
-                                  
-                                  // print("sdfdsfadsfsfasf ${stateTime[number][numberTime]}");
-
                                   if (stateTime[number][numberTime] == "ว่าง") {
                                     return Container();
                                   }
-                                  
-
-                                  
                                   return Row(
                                     mainAxisSize: MainAxisSize.max,
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        '${data.docs[index]['ชื่อยา']} ${data.docs[index]['ปริมาณยาที่ทานต่อครั้ง']} ${data.docs[index]['หน่วยยา']} ',
-                                        style: const TextStyle(fontSize: 23),
+                                      
+                                      
+                                      Container(
+                                        width: 110.0,
+                                        child: Align(
+                                          alignment: AlignmentDirectional(0, 0),
+                                          child: Text(
+                                            '${data.docs[index]['ชื่อยา']} ${data.docs[index]['ปริมาณยาที่ทานต่อครั้ง']} ${data.docs[index]['หน่วยยา']} ',
+                                            style:
+                                                const TextStyle(fontSize: 16),
+                                          ),
+                                        ),
                                       ),
-                                      Text(
-                                        // '${data.docs[index]['เวลาแจ้งเตือน'][allday]}',
-                                        "${newDateTime.day}-${newDateTime.month}-${newDateTime.year} ${data.docs[index]['เวลาแจ้งเตือน'][numberTime]}",
-                                        style: const TextStyle(fontSize: 23),
+                                      Container(
+                                        width: 130.0,
+                                        child: Align(
+                                          alignment: AlignmentDirectional(0, 0),
+                                          child: Text(
+                                            // '${data.docs[index]['เวลาแจ้งเตือน'][allday]}',
+                                            "${newDateTime.day}-${newDateTime.month}-${newDateTime.year} ${data.docs[index]['เวลาแจ้งเตือน'][numberTime]}",
+                                            style:
+                                                const TextStyle(fontSize: 16),
+                                          ),
+                                        ),
                                       ),
-                                      Text(
-                                        '${stateTime[number][numberTime]}',
-                                        style: const TextStyle(fontSize: 23),
+                                      Container(
+                                        width: 110.0,
+                                        child: Align(
+                                          alignment: AlignmentDirectional(0, 0),
+                                          child: Text(
+                                            '${stateTime[number][numberTime]}',
+                                            style:
+                                                const TextStyle(fontSize: 16),
+                                          ),
+                                        ),
                                       ),
+                                    
                                     ],
                                   );
                                 });

@@ -17,9 +17,11 @@ class _EditMedicineScreenState extends State<EditMedicineScreen> {
   late TextEditingController _medicineNameController;
   late TextEditingController _doseController;
   late TextEditingController _unitController;
-  late TextEditingController _frequencyController;
   late TextEditingController _startDateController;
   DateTime? _startDate;
+  late TextEditingController _endDateController;
+  DateTime? _endDate;
+
 
   @override
   void initState() {
@@ -29,10 +31,10 @@ class _EditMedicineScreenState extends State<EditMedicineScreen> {
     _doseController =
         TextEditingController(text: widget.document['ปริมาณยาที่ทานต่อครั้ง']);
     _unitController = TextEditingController(text: widget.document['หน่วยยา']);
-    _frequencyController =
-        TextEditingController(text: widget.document['ความถี่']);
     _startDateController =
         TextEditingController(text: widget.document['วันที่เริ่มทาน']);
+    _endDateController =
+    TextEditingController(text: widget.document['วันสุดท้ายที่ทาน']);
   }
 
   @override
@@ -40,7 +42,6 @@ class _EditMedicineScreenState extends State<EditMedicineScreen> {
     _medicineNameController.dispose();
     _doseController.dispose();
     _unitController.dispose();
-    _frequencyController.dispose();
     _startDateController.dispose();
     super.dispose();
   }
@@ -73,6 +74,10 @@ class _EditMedicineScreenState extends State<EditMedicineScreen> {
                   labelStyle: TextStyle(fontSize: 23),
                 ),
                 style: const TextStyle(fontSize: 25)),
+            TextFormField(
+              controller: _unitController,
+              decoration: InputDecoration(labelText: 'หน่วยยา'),
+            ),
             TextButton(
               onPressed: () async {
                 final DateTime? picked = await showDatePicker(
@@ -98,17 +103,14 @@ class _EditMedicineScreenState extends State<EditMedicineScreen> {
             ),
             TextField(
               controller: _startDateController,
-              enabled:
-                  false, // ปิดการใช้งาน TextField เพื่อให้มองเป็น Label เท่านั้น
               decoration: const InputDecoration(labelText: 'วันที่เริ่มทาน'),
               style: const TextStyle(fontSize: 22, color: Colors.black),
             ),
+            
             TextField(
-              controller: _startDateController,
-              enabled:
-                  false, // ปิดการใช้งาน TextField เพื่อให้มองเป็น Label เท่านั้น
-              decoration: const InputDecoration(labelText: 'วันที่สิ้นสุดการทาน'),
-              style: const TextStyle(fontSize: 22, color: Colors.black),
+            controller: _endDateController,
+            decoration: const InputDecoration(labelText: 'วันสุดท้ายที่ทาน'),
+            style: const TextStyle(fontSize: 22, color: Colors.black),
             ),
             const SizedBox(
               height: 25,
@@ -122,8 +124,8 @@ class _EditMedicineScreenState extends State<EditMedicineScreen> {
                       'ชื่อยา': _medicineNameController.text,
                       'ปริมาณยาที่ทานต่อครั้ง': _doseController.text,
                       'หน่วยยา': _unitController.text,
-                      'ความถี่': _frequencyController.text,
                       'วันที่เริ่มทาน': _startDateController.text,
+                      'วันที่สุดท้ายที่ทาน': _endDateController.text,
                     });
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('บันทึกการแก้ไขเรียบร้อยแล้ว')),

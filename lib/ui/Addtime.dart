@@ -1,16 +1,14 @@
 import 'dart:convert';
 import 'dart:math';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/noti/local_notifications.dart';
 import 'package:flutter_application_1/ui/Addmedicine.dart';
 import 'package:flutter_application_1/ui/Home.dart';
 import 'package:flutter_application_1/ui/freq.dart';
 import 'package:intl/intl.dart';
 import 'package:uuid/uuid.dart';
-
-import '../arm/local_notifications.dart';
 
 class Addtime extends StatefulWidget {
   final String nameMedicine;
@@ -42,17 +40,16 @@ class _AddtimeState extends State<Addtime> {
   List<TimeOfDay> selectedTimes = [];
   int generateRandomInt() {
     var random = Random();
-    return random.nextInt(10001); // สุ่มจำนวนเต็มระหว่าง 0 ถึง 10000
+    return random.nextInt(1000000); // สุ่มจำนวนเต็มระหว่าง 0 ถึง 10000
   }
 
   Future<void> saveDataToFirebase() async {
     CollectionReference medications = _firestore.collection('medicine');
     List<String> timesList = selectedTimes.map((time) {
-      // Convert TimeOfDay to a string representation of time (HH:mm)
       return '${time.hour}:${time.minute.toString().padLeft(2, '0')}';
     }).toList();
-    // ตัวที่เพิ่มเข้ามา Arm
-    DateTime dateTime = DateFormat("dd/MM/yyyy").parse(widget.startDate);
+
+    DateTime dateTime = DateFormat("dd/MM/yyyy").parse(widget.startDate);//แปลงค่าวันที่เริ่มต้นและสิ้นสุดให้อยู่ในรูปแบบDateTime 
     DateTime dateTimeend = DateFormat("dd/MM/yyyy").parse(widget.endDate);
     // int day = dateTime.day;
     // int month = dateTime.month;
@@ -61,25 +58,34 @@ class _AddtimeState extends State<Addtime> {
     DateTime endDate = dateTimeend; // สิ้นสุดวันที่
     int number = 1;
     int numberitem = 1;
+    int numberNotiID = 0;
     var uuid = Uuid().v4();
+    // เอาไว้เก็บ id แจ้งเตือน เพื่อใช้ในการแก้ไขในหน้าโค้ดไขรายละเอียดยา
+    List<List<String>> notiID = [];
+    //loop forสร้างการแจ้งเตือนในแต่ละวัน เวลา
     for (DateTime date = startDate;
         date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
         date = date.add(Duration(days: 1))) {
         print(number);
         number +=1;
         numberitem = 1;
+        // ต้องสร้างเพื่อเก็บ id ของเวลานั้นโค้ดที่ [] คือวันที่
+        notiID.add([]); 
       for (String time in timesList) {
         List<String> timeParts = time.split(":");
         int hour = int.parse(timeParts[0]);
         int minute = int.parse(timeParts[1]);
-        print("${date.day} ${date.month} ${date.year} ${hour} ${minute} เวลา ${numberitem}");
+        
         numberitem +=1;
+        int idGen = generateRandomInt();
+        // บันทึก id ของแต่ละเวลา
+        notiID[numberNotiID].add('$idGen');
         await LocalNotifications.showScheduleNotification(
-          id: generateRandomInt(),
+          id: idGen,
           title: "แจ้งเตือน",
           body:
-              "ชื่อ${widget.nameMedicine} ทานต่อครั้ง${widget.medicineQuantity} หน่วยยา ${widget.selectedDropdownValue}",
-          payload: "test 1",
+              "ชื่อยา${widget.nameMedicine} ${widget.medicineQuantity} ${widget.selectedDropdownValue}",
+          payload: "$idGen",
           day: date.day,
           month: date.month,
           year: date.year,
@@ -87,10 +93,11 @@ class _AddtimeState extends State<Addtime> {
           minute: minute,
         );
       }
+      numberNotiID += 1;
     }
     
-    
     String listToString = jsonEncode(List.generate(number-1, (_) => List.filled(numberitem-1, 'ว่าง')));
+    String listIDtoString = jsonEncode(notiID);
     Map<String, dynamic> documentData = {
       'id': uuid,
       'ชื่อยา': widget.nameMedicine,
@@ -99,7 +106,9 @@ class _AddtimeState extends State<Addtime> {
       'วันที่เริ่มทาน': widget.startDate,
       'วันสุดท้ายที่ทาน': widget.endDate,
       'เวลาแจ้งเตือน': timesList,
-      'สถานะ': listToString
+      'สถานะ': listToString,
+      'เวลาคลิก': listToString,
+      'id แจ้งเตือน':listIDtoString
     };
     try {
      

@@ -10,6 +10,8 @@ import 'package:flutter_application_1/ui/Addmedicine.dart';
 import 'package:flutter_event_calendar/flutter_event_calendar.dart';
 import 'package:intl/intl.dart';
 
+import '../noti/local_notifications.dart';
+
 class Home extends StatefulWidget {
   const Home({
     Key? key,
@@ -63,6 +65,23 @@ class _HomeState extends State<Home> {
     }
   }
 
+  Future<void> savetimeToFirebase(
+      {required String id, required List<List<String>> time}) async {
+    // final reference = FirebaseFirestore.instance.doc('products/${id}');
+    String listToString1 = jsonEncode(time);
+    CollectionReference medications =
+        FirebaseFirestore.instance.collection('medicine');
+    Map<String, dynamic> documentData = {'เวลาคลิก': listToString1};
+    try {
+      // await reference.set(documentData);
+
+      await medications.doc(id).update(documentData);
+      print('Data added to Firestore successfully!');
+    } catch (e) {
+      print('Error adding data to Firestore: $e');
+    }
+  }
+
   Future<String> fetchData() async {
     CollectionReference medications =
         FirebaseFirestore.instance.collection('name');
@@ -70,18 +89,84 @@ class _HomeState extends State<Home> {
     try {
       // ดึงเอกสารและรอการเสร็จสิ้น
       DocumentSnapshot snapshot =
-          await medications.doc("onRm6P2r7cXVPzFM09bS").get();
+          await medications.doc("hzjqFYmp7ywHhSLMDlxN").get();
 
       if (snapshot.exists) {
         // แปลงข้อมูลจากเอกสารเป็น Map และเข้าถึงฟิลด์ที่ต้องการ
         Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
         return data['name']; // สมมติว่า 'name' คือชื่อฟิลด์ที่คุณต้องการ
       } else {
-        return "No data found";
+        return "กรุณาเพิ่มชื่อ-นามสกุล";
       }
     } catch (e) {
       // จัดการกับข้อผิดพลาดที่อาจเกิดขึ้น
       return "Error fetching data: $e";
+    }
+  }
+
+  Future<void> updateAllMatchingDocuments(
+      {required String newStatus,
+      required String newTime,
+      required String selectTime}) async {
+    // newStatus สถาณะที่ต้องการเปลียน
+    // dateTime วันที่เลือก
+    final collection = FirebaseFirestore.instance.collection('medicine');
+    final snapshot = await collection.get();
+    print(snapshot.docs);
+
+    for (var doc in snapshot.docs) {
+      List<List<String>> stateTime = List<List<String>>.from(
+          jsonDecode(doc['สถานะ']).map((list) => List<String>.from(list)));
+      List<List<String>> timeList = List<List<String>>.from(
+          jsonDecode(doc['เวลาคลิก']).map((list) => List<String>.from(list)));
+      DateTime startDate =
+          DateFormat("dd/MM/yyyy").parse(doc['วันที่เริ่มทาน']);
+      DateTime endDate =
+          DateFormat("dd/MM/yyyy").parse(doc['วันสุดท้ายที่ทาน']);
+
+      List<dynamic> notificationTimes = doc['เวลาแจ้งเตือน'];
+
+      DateTime dateTime = DateFormat("dd/M/yyyy HH:mm").parse(selectTime);
+      int indexDateInt = 0;
+      bool swidt = false;
+      for (DateTime date = startDate;
+          date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
+          date = date.add(Duration(days: 1))) {
+        int indexDayInt = 0;
+        // แสดงผลหรือทำงานกับวันที่
+        for (String timeNoti in notificationTimes) {
+          DateTime indateTime = DateFormat("dd/M/yyyy HH:mm")
+              .parse("${date.day}/${date.month}/${date.year} $timeNoti");
+          // เอาวันที่ที่มาจากการกดปุ่มมา loopเปลียบเทียบกับ เวลาใน firebase
+          if (dateTime.year == indateTime.year &&
+              dateTime.month == indateTime.month &&
+              dateTime.day == indateTime.day &&
+              dateTime.hour == indateTime.hour &&
+              dateTime.minute == indateTime.minute) {
+                // ป้องกันการบันทึกซ้ำในรายการที่กดไปแล้ว
+            if (stateTime[indexDateInt][indexDayInt] == "ว่าง"){
+              // กำหนดค่าใหม่เมื่อตรงกับเงื่อนไข
+              stateTime[indexDateInt][indexDayInt] = newStatus;
+              timeList[indexDateInt][indexDayInt] = newTime;
+              swidt = true;
+            }
+            
+          }
+          indexDayInt += 1;
+        }
+        indexDateInt += 1;
+      }
+      if (swidt) {
+        await saveDataToFirebase(
+          id: "${doc["id"]}",
+          state: stateTime,
+        );
+        await savetimeToFirebase(
+          id: "${doc["id"]}",
+          time: timeList,
+        );
+        swidt = false;
+      }
     }
   }
 
@@ -152,7 +237,7 @@ class _HomeState extends State<Home> {
                     monthStringType: MonthStringTypes.FULL,
                     headerTextColor: Colors.black),
                 calendarType: CalendarType.GREGORIAN,
-                calendarLanguage: 'en',
+                calendarLanguage: 'th',
                 onInit: () {
                   DateTime dateTemp = DateTime(dateOutputDate.year,
                       dateOutputDate.month, dateOutputDate.day, 0, 0);
@@ -221,19 +306,6 @@ class _HomeState extends State<Home> {
                       return const Text('Loading');
                     }
                     final data = snapshot.requireData;
-                    if (data.size == 0) {
-                      return const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'คุณยังไม่มีรายการแจ้งเตือน',
-                              style: TextStyle(fontSize: 25),
-                            ),
-                          ],
-                        ),
-                      );
-                    }
                     return ListView.builder(
                       itemCount: data.size,
                       itemBuilder: (context, index) {
@@ -245,21 +317,30 @@ class _HomeState extends State<Home> {
                         DateTime selectDateTime = DateTime(dateOutputDate.year,
                             dateOutputDate.month, dateOutputDate.day);
                         int allday = dateOutputDate.day - startDateTime.day;
-                        print(
-                            "000 ${selectDateTime.year} ${dateOutputDate.month} ${dateOutputDate.day}");
+                        // print(
+                        //     "000 ${selectDateTime.year} ${dateOutputDate.month} ${dateOutputDate.day}");
                         if ((selectDateTime.isAfter(startDateTime) ||
                                 selectDateTime
                                     .isAtSameMomentAs(startDateTime)) &&
                             (selectDateTime.isBefore(endDateTime) ||
                                 selectDateTime.isAtSameMomentAs(endDateTime))) {
-                          print("อยู่ในช่วง");
+                          // print("อยู่ในช่วง");
+
                           List<List<String>> stateTime =
-                              List<List<String>>.from(jsonDecode(data.docs[index]['สถานะ'])
+                              List<List<String>>.from(
+                                  jsonDecode(data.docs[index]['สถานะ'])
+                                      .map((list) => List<String>.from(list)));
+                          List<List<String>> timeList = List<List<String>>.from(
+                              jsonDecode(data.docs[index]['เวลาคลิก'])
                                   .map((list) => List<String>.from(list)));
-                          print("iiiiii${stateTime}");
+
+                          List<List<String>> idNotiList = List<List<String>>.from(
+                              jsonDecode(data.docs[index]['id แจ้งเตือน'])
+                                  .map((list) => List<String>.from(list)));
+                          // print("iiiiii${stateTime}");
                           // for (int number = 0;number < data.docs[index]['เวลาแจ้งเตือน'].length;number++)
-                          print(
-                              "88888/${data.docs[index]['เวลาแจ้งเตือน'].length}");
+                          // print(
+                          //     "88888/${data.docs[index]['เวลาแจ้งเตือน'].length}");
                           return ListView.builder(
                               shrinkWrap: true,
                               physics: NeverScrollableScrollPhysics(),
@@ -298,14 +379,13 @@ class _HomeState extends State<Home> {
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.fromLTRB(
-                                                        0, 0, 5, 0),
+                                              const Padding(
+                                                padding: EdgeInsets.fromLTRB(
+                                                    0, 0, 5, 0),
                                                 child: Text(
                                                   'เวลาทานยา:',
-                                                  style: const TextStyle(
-                                                      fontSize: 18),
+                                                  style:
+                                                      TextStyle(fontSize: 18),
                                                 ),
                                               ),
                                               Column(
@@ -324,11 +404,17 @@ class _HomeState extends State<Home> {
                                           padding: EdgeInsets.all(10),
                                           child: Text(
                                             '${stateTime[allday][number] == "ว่าง" ? "" : "ทานยา: ${stateTime[allday][number]}"}',
-                                            style: TextStyle(fontSize: 18),
+                                            style: TextStyle(
+                                              fontSize: 22,
+                                              color: stateTime[allday]
+                                                          [number] ==
+                                                      "ไม่รับยา"
+                                                  ? Colors.red
+                                                  : Colors.green,
+                                            ),
                                           ),
                                         ),
-                                        '${stateTime[allday][number]}' ==
-                                                "ว่าง"
+                                        '${stateTime[allday][number]}' == "ว่าง"
                                             ? Row(
                                                 mainAxisAlignment:
                                                     MainAxisAlignment
@@ -340,27 +426,88 @@ class _HomeState extends State<Home> {
                                                       padding: const EdgeInsets
                                                           .fromLTRB(5, 0, 5, 0),
                                                       child: ElevatedButton(
-                                                          style: ElevatedButton
-                                                              .styleFrom(
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .green,
-                                                                  foregroundColor:
-                                                                      Colors
-                                                                          .white),
-                                                          onPressed: () async {
-                                                            stateTime[allday][number] = "ทานยาแล้ว";
-                                                            await saveDataToFirebase(
-                                                                id:
-                                                                    "${data.docs[index]['id']}",
-                                                                state:
-                                                                    stateTime);
-                                                          },
-                                                          child: Text("รับยา",
-                                                              style:
-                                                                  const TextStyle(
-                                                                      fontSize:
-                                                                          18))),
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                          backgroundColor:
+                                                              Colors.green,
+                                                          foregroundColor:
+                                                              Colors.white,
+                                                        ),
+                                                        onPressed: () async {
+                                                          var timeNow =
+                                                              DateTime.now();
+                                                          stateTime[allday]
+                                                                  [number] =
+                                                              "ทานยาแล้ว";
+                                                          timeList[allday]
+                                                                  [number] =
+                                                              "${timeNow.day}/${timeNow.month}/${timeNow.year} ${timeNow.hour}:${timeNow.minute}";
+                                                          await updateAllMatchingDocuments(
+                                                            newStatus:
+                                                                "ทานยาแล้ว",
+                                                            newTime:
+                                                                timeList[allday]
+                                                                    [number],
+                                                            selectTime:
+                                                                "${selectDateTime.day}/${selectDateTime.month}/${selectDateTime.year} ${data.docs[index]['เวลาแจ้งเตือน'][number]}",
+                                                          );
+                                                          print("kkk ${idNotiList[allday][number]}");
+                                                          LocalNotifications.cancelNotificationById(int.parse(idNotiList[allday][number]));
+                                                          // await saveDataToFirebase(
+                                                          //   id: "${data.docs[index]['id']}",
+                                                          //   state: stateTime,
+                                                          // );
+                                                          // await savetimeToFirebase(
+                                                          //   id: "${data.docs[index]['id']}",
+                                                          //   time: timeList,
+                                                          // );
+                                                        },
+                                                        child: const Text(
+                                                          "รับยา",
+                                                          style: TextStyle(
+                                                              fontSize: 18),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Expanded(
+                                                    child: Padding(
+                                                      padding: const EdgeInsets
+                                                          .fromLTRB(5, 0, 5, 0),
+                                                      child: ElevatedButton(
+                                                        style: ElevatedButton
+                                                            .styleFrom(
+                                                          backgroundColor: Colors
+                                                              .red, // เปลี่ยนสีเป็นสีแดง
+                                                          foregroundColor:
+                                                              Colors.white,
+                                                        ),
+                                                        onPressed: () async {
+                                                          var timeNow =
+                                                              DateTime.now();
+                                                          stateTime[allday]
+                                                                  [number] =
+                                                              "ไม่รับยา"; // กำหนดสถานะเป็น "ไม่รับยา"
+                                                          timeList[allday]
+                                                                  [number] =
+                                                              "${timeNow.day}/${timeNow.month}/${timeNow.year} ${timeNow.hour}:${timeNow.minute}";
+                                                          await updateAllMatchingDocuments(
+                                                            newStatus:
+                                                                "ไม่รับยา",
+                                                            newTime:
+                                                                timeList[allday]
+                                                                    [number],
+                                                            selectTime:
+                                                                "${selectDateTime.day}/${selectDateTime.month}/${selectDateTime.year} ${data.docs[index]['เวลาแจ้งเตือน'][number]}",
+                                                          );
+                                                          LocalNotifications.cancelNotificationById(int.parse(idNotiList[allday][number]));
+                                                        },
+                                                        child: const Text(
+                                                          "ไม่รับยา", // แสดงข้อความ "ไม่รับยา"
+                                                          style: TextStyle(
+                                                              fontSize: 18),
+                                                        ),
+                                                      ),
                                                     ),
                                                   ),
                                                 ],
@@ -380,7 +527,8 @@ class _HomeState extends State<Home> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
+                // await LocalNotifications.printPendingNotifications();
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const Addmedicine()),

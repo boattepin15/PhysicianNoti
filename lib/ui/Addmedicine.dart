@@ -1,10 +1,5 @@
-import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_application_1/menu/menulist.dart';
-import 'package:flutter_application_1/ui/Addtime.dart';
 import 'package:flutter_application_1/ui/freq.dart';
 
 class Addmedicine extends StatefulWidget {
@@ -151,8 +146,8 @@ class _Addmedicine extends State<Addmedicine> {
                                           inputFormatters: [
                                             LengthLimitingTextInputFormatter(
                                                 10),
-                                            FilteringTextInputFormatter.allow(
-                                                RegExp(r"^\d+(?:\.\d+)?$")),
+                                              FilteringTextInputFormatter.allow(
+                                                RegExp(r'^\d+\.?\d{0,2}'))
                                           ],
                                           onChanged: (value) {
                                             // Parse the value and ensure it doesn't exceed 1100
@@ -226,15 +221,6 @@ class _Addmedicine extends State<Addmedicine> {
                                               ),
                                             ),
                                             DropdownMenuItem(
-                                              value: "ออนซ์",
-                                              child: Text("ออนซ์",
-                                                  style: TextStyle(
-                                                    fontFamily:
-                                                        'SukhumvitSet-Medium',
-                                                    fontSize: 22.0,
-                                                  )),
-                                            ),
-                                            DropdownMenuItem(
                                               value: "ช้อนชา",
                                               child: Text("ช้อนชา",
                                                   style: TextStyle(
@@ -246,15 +232,6 @@ class _Addmedicine extends State<Addmedicine> {
                                             DropdownMenuItem(
                                               value: "ช้อนโต๊ะ",
                                               child: Text("ช้อนโต๊ะ",
-                                                  style: TextStyle(
-                                                    fontFamily:
-                                                        'SukhumvitSet-Medium',
-                                                    fontSize: 22.0,
-                                                  )),
-                                            ),
-                                            DropdownMenuItem(
-                                              value: "มิลลิกรัม",
-                                              child: Text("มิลลิกรัม",
                                                   style: TextStyle(
                                                     fontFamily:
                                                         'SukhumvitSet-Medium',
@@ -380,8 +357,9 @@ class _Addmedicine extends State<Addmedicine> {
                       context,
                       MaterialPageRoute(
                           builder: (context) => frequency(
-                                nameMedicine: nameMedicine,
-                                medicineQuantity: medicineQuantity,
+                            // 23/5/2567 แก้ไขทำให้ชื่อและจำนวนยาห้ามว่าง 
+                                nameMedicine: nameMedicine.length == 0?"None":nameMedicine,
+                                medicineQuantity: medicineQuantity.length == 0?"1": medicineQuantity,
                                 selectedDropdownValue: selectedDropdownValue,
                               )),
                     );

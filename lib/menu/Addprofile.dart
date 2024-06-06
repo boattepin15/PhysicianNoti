@@ -10,6 +10,31 @@ class Addprofile extends StatefulWidget {
 
 class _AddprofileState extends State<Addprofile> {
   final nameController = TextEditingController();
+
+  Future<void> fetchData() async {
+    CollectionReference names = FirebaseFirestore.instance.collection('name');
+
+    try {
+      DocumentSnapshot snapshot = await names.doc("hzjqFYmp7ywHhSLMDlxN").get();
+
+      if (snapshot.exists) {
+        Map<String, dynamic> data = snapshot.data() as Map<String, dynamic>;
+        nameController.text =
+            data['name']; // Set the fetched name to the controller
+      } else {
+        nameController.text = "กรุณาเพิ่มชื่อ-นามสกุล";
+      }
+    } catch (e) {
+      nameController.text = "Error fetching data: $e";
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,24 +101,22 @@ class _AddprofileState extends State<Addprofile> {
                                         color: Colors.white),
                                     controller: nameController,
                                     decoration: const InputDecoration(
-                                        contentPadding: EdgeInsets.symmetric(
-                                            vertical: 10.0, horizontal: 15),
-                                        //ปรับตำแหน่งcursor เริ่มต้นในช่องข้อความ
-                                        border: OutlineInputBorder(
-                                            borderRadius: BorderRadius.all(
-                                              Radius.circular(20.0),
-                                            ),
-                                            borderSide: BorderSide(
-                                                width: 0,
-                                                style: BorderStyle.none)),
-                                        filled: true,
-                                        hintText: "ชื่อ : ชื่อ-นามสกุล",
-                                        hintStyle: TextStyle(
-                                            fontFamily: 'SukhumvitSet-Medium',
-                                            color: Colors.white),
-                                        fillColor:
-                                            Color.fromRGBO(84, 164, 244, 0.8)),
-                                    // fillColor: Colors.white70),
+                                      contentPadding: EdgeInsets.symmetric(
+                                          vertical: 10.0, horizontal: 15),
+                                      border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(20.0),
+                                          ),
+                                          borderSide: BorderSide(
+                                              width: 0,
+                                              style: BorderStyle.none)),
+                                      filled: true,
+                                      hintStyle: TextStyle(
+                                          fontFamily: 'SukhumvitSet-Medium',
+                                          color: Colors.white),
+                                      fillColor:
+                                          Color.fromRGBO(84, 164, 244, 0.8),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -142,17 +165,15 @@ class _AddprofileState extends State<Addprofile> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        child: const Text(
-                          "ย้อนกลับ",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 25,
-                              fontFamily: 'SukhumvitSet-Bold'),
-                        ),
+                      Text(
+                        "ย้อนกลับ",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 25,
+                            fontFamily: 'SukhumvitSet-Bold'),
                       ),
                     ],
                   ),
@@ -183,34 +204,70 @@ class _AddprofileState extends State<Addprofile> {
                       },
                     ),
                   ),
-                  // onPressed: () {
-                  //   if(txtMedicine.text.isNotEmpty && txtMedicineQuantity.text.isNotEmpty ) {
-                  //     AppUrl.objAddItemMedicine.nameMedicine = txtMedicine.text.toString();
-                  //     AppUrl.objAddItemMedicine.unitSubMedicineName = txtMedicineQuantity.text.toString();
-                  //     _pushPagetest(context,false);
-                  //    }else {
-                  //     _openPopupInvalidate(context,"กรุณากรอกข้อมูลให้ครบถ้วน");
-                  //   }
-                  // },
-
                   onPressed: () {
-                    CollectionReference collRef =
+                    CollectionReference names =
                         FirebaseFirestore.instance.collection('name');
-                    collRef.add({
+                    names.doc("hzjqFYmp7ywHhSLMDlxN").update({
                       'name': nameController.text,
+                    }).then((_) {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          Future.delayed(Duration(seconds: 2), () {
+                            Navigator.of(context).pop(true);
+                          });
+                          return AlertDialog(
+                            title: Row(
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.green),
+                                SizedBox(
+                                    width:
+                                        10), // เพิ่มช่องว่างระหว่างไอคอนและข้อความ
+                                Text('การแจ้งเตือน'),
+                              ],
+                            ),
+                            content: Text('อัปเดตชื่อสำเร็จ'),
+                          );
+                        },
+                      );
+
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   const SnackBar(content: Text('อัปเดตชื่อสำเร็จ')),
+                      // );
+                    }).catchError((error) {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          Future.delayed(Duration(seconds: 2), () {
+                            Navigator.of(context).pop(true);
+                          });
+
+                          return AlertDialog(
+                            title: Row(
+                              children: [
+                                Icon(Icons.cancel, color: Colors.red),
+                                SizedBox(
+                                    width:
+                                        10), // เพิ่มช่องว่างระหว่างไอคอนและข้อความ
+                                Text('การแจ้งเตือน'),
+                              ],
+                            ),
+                            content: Text('อัปเดตชื่อไม่สำเร็จ: $error'),
+                          );
+                        },
+                      );
+                      
                     });
                   },
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Container(
-                        child: const Text(
-                          "ตกลง",
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 25,
-                              fontFamily: 'SukhumvitSet-Bold'),
-                        ),
+                      Text(
+                        "ตกลง",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 25,
+                            fontFamily: 'SukhumvitSet-Bold'),
                       ),
                     ],
                   ),

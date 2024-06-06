@@ -1,14 +1,10 @@
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/test.dart';
-import 'package:flutter_application_1/listmedicine.dart';
-import 'package:flutter_application_1/screen/homescreen.dart';
-import 'package:flutter_application_1/ui/Addtime.dart';
+import 'package:flutter_application_1/noti/local_notifications.dart';
 import 'package:flutter_application_1/ui/Home.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-
-import 'arm/local_notifications.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'firebase_noti/firebase_api.dart';
 
 FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
@@ -51,6 +47,16 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
+      // 22/8/2567 กำหนดเพื่อให้สามารถเลือก startDate endDate ภาษาไทย
+      localizationsDelegates: [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+      ],
+      // 22/8/2567 
+      supportedLocales: [
+          const Locale('en', 'US'), // English
+          const Locale('th', 'TH'), // Thai
+      ],
       home: Home(),
     );
   }

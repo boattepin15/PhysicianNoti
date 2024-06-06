@@ -1,13 +1,11 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/ui/Addmedicine.dart';
 import 'package:flutter_application_1/ui/Addtime.dart';
 import 'package:flutter_rounded_date_picker/flutter_rounded_date_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:weekday_selector/weekday_selector.dart';
+
 
 StreamController<List<String>> selectedDaysController =
     StreamController<List<String>>.broadcast();
@@ -28,6 +26,7 @@ class frequency extends StatefulWidget {
 
 
 class _frequencyState extends State<frequency> {
+  
   TextEditingController txtHBDController = TextEditingController();
   TextEditingController txtEndController = TextEditingController();
   TextEditingController NameMedicineController = TextEditingController();
@@ -41,6 +40,7 @@ class _frequencyState extends State<frequency> {
     Timer(const Duration(milliseconds: 400), () {
       int yearCurrent = DateTime.now().year + 1;
       showRoundedDatePicker(
+
         borderRadius: 25,
         styleDatePicker: MaterialRoundedDatePickerStyle(
           textStyleDayHeader: const TextStyle(
@@ -84,22 +84,25 @@ class _frequencyState extends State<frequency> {
           ),
         ),
         // era: EraMode.BUDDHIST_YEAR,
+        era: EraMode.BUDDHIST_YEAR,
         context: context,
         height: 330,
         fontFamily: 'SukhumvitSet-Bold',
-        // locale: const Locale("th"),
+        locale: Locale("th", "TH"),
         initialDate: DateTime.now(),
         firstDate: DateTime(1850),
         lastDate: DateTime(yearCurrent),
       ).then((date) {
-        setState(() {
-          var strDay = DateFormat('dd/MM/yyyy').format(date!);
-          txtHBDController.text = strDay;
-          FocusScopeNode currentFocus = FocusScope.of(context);
-          if (!currentFocus.hasPrimaryFocus) {
-            currentFocus.unfocus();
-          }
-        });
+        if (date != null) {
+          setState(() {
+            var strDay = DateFormat('dd/MM/yyyy').format(date!);
+            txtHBDController.text = strDay;
+            FocusScopeNode currentFocus = FocusScope.of(context);
+            if (!currentFocus.hasPrimaryFocus) {
+              currentFocus.unfocus();
+            }
+          });
+        }
       });
     });
   }
@@ -156,28 +159,33 @@ class _frequencyState extends State<frequency> {
           ),
         ),
         // era: EraMode.BUDDHIST_YEAR,
+        era: EraMode.BUDDHIST_YEAR,
         context: context,
         height: 330,
         fontFamily: 'SukhumvitSet-Bold',
-        // locale: const Locale("th"),
+        locale: Locale("th", "TH"),
         initialDate: DateTime.now(),
         firstDate: DateTime(1850),
         lastDate: DateTime(yearCurrent),
       ).then((date) {
-        setState(() {
-          var strDay = DateFormat('dd/MM/yyyy').format(date!);
-          txtEndController.text = strDay;
-          FocusScopeNode currentFocus = FocusScope.of(context);
-          if (!currentFocus.hasPrimaryFocus) {
-            currentFocus.unfocus();
-          }
-        });
+        if (date != null) {
+
+          setState(() {
+            var strDay = DateFormat('dd/MM/yyyy').format(date!);
+            txtEndController.text = strDay;
+            FocusScopeNode currentFocus = FocusScope.of(context);
+            if (!currentFocus.hasPrimaryFocus) {
+              currentFocus.unfocus();
+            }
+          });
+        }
       });
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    print(widget.nameMedicine);
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
