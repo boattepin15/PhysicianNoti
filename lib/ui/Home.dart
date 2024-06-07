@@ -52,7 +52,6 @@ class _HomeState extends State<Home> {
       setState(() {
         _notificationSubscription?.cancel();
       });
-      print("dddd");
       // ยกเลิกการสมัครรับการแจ้งเตือนเมื่อไปยังหน้าอื่น
     });
   }
@@ -127,7 +126,6 @@ class _HomeState extends State<Home> {
     // dateTime วันที่เลือก
     final collection = FirebaseFirestore.instance.collection('medicine');
     final snapshot = await collection.get();
-    print(snapshot.docs);
 
     for (var doc in snapshot.docs) {
       List<List<String>> stateTime = List<List<String>>.from(
@@ -184,178 +182,64 @@ class _HomeState extends State<Home> {
     }
   }
 
-  memeberInt(data, indexPayload) {
-    int indexDoc = 0;
-    for (var doc in data) {
-      int indexDate = 0;
-      // 1. ดึงแจ้งเตือนมาทั้งหมดเพื่อหารายการทที่ตรงกันแล้วดึงวันทีออกมา
-      List<List<String>> timeList = List<List<String>>.from(
-          jsonDecode(doc['id แจ้งเตือน'])
-              .map((list) => List<String>.from(list)));
 
-      // // ค้นหาเพื่อนำ indexDate ไปใช้
-      for (List<String> timeData in timeList) {
-        print("indexDate $timeData");
-        for (String timeTime in timeData) {
-          // ถ้าเข้าแจ้งเตือนแจ้งว่าต้องมีแจ้งเตือนตัวนั้นทำให้ไม่จำเป็นต้องใส่ else
-          if (timeTime == indexPayload) {
-            print(
-                "$indexDoc indexDate $indexDate เจอ $timeTime == $indexPayload ");
-            return {'setDoc': indexDoc, 'indexDate': indexDate, "i see": true};
-          }
-        }
-        // เอาไว้คำนวนกับวันที่
-        indexDate += 1;
-      }
-      indexDoc += 1;
-    }
-    return {'setDoc': 0, 'indexDate': 0, "i see": true};
-  }
-
-  // หา index ที่ตรงกับ id notification
+  // หา index ที่ตรงกับ id notification ฟังชันนี้มันเข้ามา 2 ครั้ง
   processDataNoti(String indexPayload) async {
     final collection = FirebaseFirestore.instance.collection('medicine');
     final snapshot = await collection.get();
-    // List<String> listNew = [];
-    // int indexTime = 0;
-    // int daysDifference = 0;
-    // int daysDifferenceNew = 0;
 
-    List<String> listNew = [];
+    Map<String, List<Map<String, String>>> dateToMembersMap = {};
 
-    Map<String, dynamic> test = await memeberInt(snapshot.docs, indexPayload);
-    DateTime? pDate;
-    // เมื่อเจอรายการ i see จะเท่ากับ 1
-    if (test["i see"]) {
-      print("test ${test["setDoc"]} ${test["indexDate"]}");
-      print(snapshot.docs[test["setDoc"]!]["id"]);
-      print(snapshot.docs[test["setDoc"]!]["วันที่เริ่มทาน"]);
-      DateTime pDate = DateFormat("dd/MM/yyyy")
-          .parse(snapshot.docs[test["setDoc"]!]["วันที่เริ่มทาน"]);
+    for (var doc in snapshot.docs) {
+      DateTime _startDate =
+          DateFormat("dd/MM/yyyy").parse(doc['วันที่เริ่มทาน']);
+      DateTime _endDate =
+          DateFormat("dd/MM/yyyy").parse(doc['วันสุดท้ายที่ทาน']);
+      List<List<String>> idNotificationList = List<List<String>>.from(
+          jsonDecode(doc['id แจ้งเตือน'])
+              .map((list) => List<String>.from(list)));
 
-      DateTime newData1 = pDate.add(Duration(days: test["indexDate"]));
-      for (var doc in snapshot.docs) {
-        DateTime startDate =
-            DateFormat("dd/MM/yyyy").parse(doc['วันที่เริ่มทาน']);
+      int index = 0; // ใช้เพื่อติดตาม id แจ้งเตือนในแต่ละวัน
+      for (DateTime date = _startDate;
+          date.isBefore(_endDate) || date.isAtSameMomentAs(_endDate);
+          date = date.add(Duration(days: 1))) {
+        String dateKey = DateFormat("dd/MM/yyyy").format(date);
 
-        DateTime endDate =
-            DateFormat("dd/MM/yyyy").parse(doc['วันสุดท้ายที่ทาน']);
-        print("idss $startDate");
-        // อยู่ระหว่างหรือเท่ากับหรือไม่
-        if ((pDate.isAfter(startDate) || pDate.isAtSameMomentAs(startDate)) &&
-            (pDate.isBefore(endDate) || pDate.isAtSameMomentAs(endDate))) {
-          List<List<String>> timeList = List<List<String>>.from(
-              jsonDecode(doc['id แจ้งเตือน'])
-                  .map((list) => List<String>.from(list)));
-          // print(object)
-
-          // for (String dataId in timeList[test["indexDate"]!]) {
-          int dateTimeIn = 0;
-          for (DateTime date = startDate;
-              date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
-              date = date.add(Duration(days: 1))) {
-            if (newData1.day == date.day &&
-                newData1.month == date.month &&
-                newData1.year == date.year) {
-              print(
-                  "idss  ${timeList[test["indexDate"]!]} ssss $newData1 indexDate=${test["indexDate"]}");
-              for (String dataId in timeList[dateTimeIn]) {
-                listNew.add(dataId);
-                print("idss aaa ${listNew}");
-              }
-            }
-            dateTimeIn += 1;
-          }
-          // listNew.add(dataId);
-          // }
+        // ตรวจสอบว่า key นี้มีอยู่ใน Map หรือยัง ถ้าไม่มีก็สร้างรายการใหม่
+        if (!dateToMembersMap.containsKey(dateKey)) {
+          dateToMembersMap[dateKey] = [];
         }
-      }
-      if (pDate != null) {
-        int daysDifference = pDate.difference(dateOutputDate).inDays;
-        print("idss  ddd $listNew ");
 
-        // ได้ index สำหรับอิงการเลื่อนของวันๆนั้น
-        for (int i = 0; i < listNew.length; i++) {
-          if (listNew[i] == indexPayload) {
-            print("${listNew[i]} $i == $indexPayload   pppp");
-            return {'indexDate': daysDifference, 'indexTime': i};
+        // เพิ่ม id แจ้งเตือนที่ตรงกับวันที่นั้นลงในรายการ
+        if (index < idNotificationList.length) {
+          for (String id in idNotificationList[index]) {
+            dateToMembersMap[dateKey]?.add({"id": id});
           }
+        }
+
+        index++;
+      }
+    }
+
+    // ค้นหา indexPayload ใน Members
+    for (var dateKey in dateToMembersMap.keys) {
+      var members = dateToMembersMap[dateKey];
+      for (int i = 0; i < members!.length; i++) {
+        if (members[i]['id'] == indexPayload) {
+          DateTime _indexDate =
+                DateFormat("dd/MM/yyyy").parse(dateKey);
+          int daysDifference = _indexDate.difference(dateOutputDate).inDays;
+          return {'indexDate': daysDifference, 'indexTime': i};
         }
       }
     }
 
-    // for (var doc in snapshot.docs) {
-    //   int indexDate = 0;
-    //   DateTime startDate =
-    //       DateFormat("dd/MM/yyyy").parse(doc['วันที่เริ่มทาน']);
-    //   DateTime endDate =
-    //       DateFormat("dd/MM/yyyy").parse(doc['วันสุดท้ายที่ทาน']);
-    //    DateTime now;
-    //   // 1. ดึงแจ้งเตือนมาทั้งหมดเพื่อหารายการทที่ตรงกันแล้วดึงวันทีออกมา
-    //   List<List<String>> timeList = List<List<String>>.from(
-    //     jsonDecode(doc['id แจ้งเตือน'])
-    //         .map((list) => List<String>.from(list)));
-
-    // // ค้นหาเพื่อนำ indexDate ไปใช้
-    //   for (List<String> timeData in timeList){
-    //       print("indexDate $timeData");
-    //       for(String timeTime in timeData){
-    //         // ถ้าเข้าแจ้งเตือนแจ้งว่าต้องมีแจ้งเตือนตัวนั้นทำให้ไม่จำเป็นต้องใส่ else
-    //         if (timeTime == indexPayload){
-    //           print("$indexDoc indexDate $indexDate เจอ $timeTime == $indexPayload ");
-    //           break;
-    //         }
-    //       }
-    //       // เอาไว้คำนวนกับวันที่
-    //       indexDate += 1;
-    //   }
-    //   print("Date ${indexDate}");
-    //   now = startDate.add(Duration(days: indexDate));
-    //   print('Date $now');
-    //   // print("indexDate ${indexDate}");
-    //   // if (dateOutputDate.isAfter(startDate) && dateOutputDate.isBefore(endDate)) {
-    //   //   // Payload อยู่ในช่วงระหว่าง startDate และ endDate
-    //   //   print("Payload is within the date range.");
-    //   // } else {
-    //   //   // Payload ไม่ได้อยู่ในช่วง
-    //   //   print("Payload is not within the date range.");
-    //   // }
-
-    // //   DateTime startDate =
-    // //       DateFormat("dd/MM/yyyy").parse(doc['วันที่เริ่มทาน']);
-
-    // //   // เอาวันที่ใน database หาผลต่างกับ วันที่ที่เราเลือก
-    // //   daysDifference = startDate.difference(dateOutputDate).inDays;
-    // //   DateTime newDate = startDate.add(Duration(days: daysDifference));
-    // //   daysDifferenceNew = startDate.difference(newDate).inDays;
-    // //   print("object $daysDifferenceNew yyy");
-    // //   List<List<String>> timeList = List<List<String>>.from(
-    // //       jsonDecode(doc['id แจ้งเตือน'])
-    // //           .map((list) => List<String>.from(list)));
-    // //   print("${timeList} timeList");
-    // //   for (String timeData in timeList[daysDifferenceNew]) {
-
-    // //     listNew.add(timeData);
-    //     indexDoc += 1;
-    //   }
-
-    // loop ชุดข้อมูล
-
-    // }
-    // print("$listNew listNew");
-    // for (String timeData in listNew) {
-    //   if (timeData == indexPayload) {
-    //     print("object $timeData $indexPayload $daysDifference $indexTime");
-    //     return {'indexDate': daysDifference, 'indexTime': indexTime};
-    //   }
-    //   indexTime += 1;
-    // }
+    // กรณีที่หาไม่เจอ
     return {'indexDate': 0, 'indexTime': 0};
   }
 
   // ควบคุมการเลื่อน
   void _scrollToNotification(int index) {
-    print("index = $index");
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -365,22 +249,22 @@ class _HomeState extends State<Home> {
         );
       }
     });
+    // เมื่อเลื่อนเสร็จให้ยกเลิกแจ้งเตือนโดยทันที
+    _notificationSubscription?.cancel();
   }
 
   _subscribeToNotifications() async {
     _notificationSubscription =
         LocalNotifications.onClickNotification.listen((payload) async {
-      print("${payload}  1010");
 
       Map<String, int> result = await processDataNoti(payload);
       indexNotiDate = result['indexDate']!;
       int indexTime = result['indexTime']!;
       _scrollToNotification(indexTime);
-      print("${dateOutputDate.day} ${indexNotiDate} 888888");
       setState(() {
         dateOutputDate = dateOutputDate.add(Duration(days: indexNotiDate));
       });
-      print("${dateOutputDate.day} 999999");
+
     });
   }
 
@@ -392,14 +276,12 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    print("initState");
     _initializeNotifications();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    print("didChangeDependencies");
     _initializeNotifications();
   }
 
@@ -696,8 +578,6 @@ class _HomeState extends State<Home> {
                                                             selectTime:
                                                                 "${selectDateTime.day}/${selectDateTime.month}/${selectDateTime.year} ${data.docs[index]['เวลาแจ้งเตือน'][number]}",
                                                           );
-                                                          print(
-                                                              "kkk ${idNotiList[allday][number]}");
                                                           LocalNotifications
                                                               .cancelNotificationById(
                                                                   int.parse(idNotiList[
@@ -790,7 +670,6 @@ class _HomeState extends State<Home> {
                   MaterialPageRoute(builder: (context) => const Addmedicine()),
                 );
                 _scrollToNotification(0);
-                print("กลับมา");
                 setState(() {
                   _notificationSubscription?.cancel();
                 });
