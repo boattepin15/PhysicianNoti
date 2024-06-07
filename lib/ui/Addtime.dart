@@ -336,9 +336,12 @@ class _AddtimeState extends State<Addtime> {
                     ),
                   ),
                   onPressed: () async {
+                    await saveDataToFirebase();
                     Navigator.push(context,
                         MaterialPageRoute(builder: (context) => Home()));
-                    await saveDataToFirebase();
+                    // Navigator.pop(context);
+                    // Navigator.pop(context);
+                    // Navigator.pop(context);
                   },
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,

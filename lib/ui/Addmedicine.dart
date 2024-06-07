@@ -112,6 +112,11 @@ class _Addmedicine extends State<Addmedicine> {
                                               color: Colors.grey[800],
                                             ),
                                           ),
+                                          inputFormatters: [
+                                            // กำหนดให้ไม่เกิน 15 ตัวอักษร
+                                            LengthLimitingTextInputFormatter(
+                                                15),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -146,7 +151,7 @@ class _Addmedicine extends State<Addmedicine> {
                                           inputFormatters: [
                                             LengthLimitingTextInputFormatter(
                                                 10),
-                                              FilteringTextInputFormatter.allow(
+                                            FilteringTextInputFormatter.allow(
                                                 RegExp(r'^\d+\.?\d{0,2}'))
                                           ],
                                           onChanged: (value) {
@@ -357,9 +362,13 @@ class _Addmedicine extends State<Addmedicine> {
                       context,
                       MaterialPageRoute(
                           builder: (context) => frequency(
-                            // 23/5/2567 แก้ไขทำให้ชื่อและจำนวนยาห้ามว่าง 
-                                nameMedicine: nameMedicine.length == 0?"None":nameMedicine,
-                                medicineQuantity: medicineQuantity.length == 0?"1": medicineQuantity,
+                                // 23/5/2567 แก้ไขทำให้ชื่อและจำนวนยาห้ามว่าง
+                                nameMedicine: nameMedicine.length == 0
+                                    ? "None"
+                                    : nameMedicine,
+                                medicineQuantity: medicineQuantity.length == 0
+                                    ? "1"
+                                    : medicineQuantity,
                                 selectedDropdownValue: selectedDropdownValue,
                               )),
                     );

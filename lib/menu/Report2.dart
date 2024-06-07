@@ -100,6 +100,14 @@ class _Report2State extends State<Report2> {
 
     return result;
   }
+  // กำหนดจำนวนสูงสุดในการแสดงตัวอักษร
+  String truncate(String text, int length) {
+  if (text.length <= length) {
+    return text;
+  } else {
+    return '${text.substring(0, length)}...';
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -208,6 +216,7 @@ class _Report2State extends State<Report2> {
                     children: groupedData.map<Widget>((group) {
                       bool isExpanded =
                           _expandedGroups[group['ชื่อยา']] ?? true;
+                      print(groupedData);
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -215,7 +224,7 @@ class _Report2State extends State<Report2> {
                             mainAxisSize: MainAxisSize.max,
                             children: [
                               Text(
-                                "ชื่อยาเหมือนกัน",
+                                "${truncate(group['ชื่อยา'],15)} (มี ${group['รายการ'].length} รายการ)",
                                 style: TextStyle(
                                     fontSize: 18.0,
                                     fontFamily: 'Poppins',
@@ -267,7 +276,7 @@ class _Report2State extends State<Report2> {
                                       child: Align(
                                         alignment: Alignment.center,
                                         child: Text(
-                                          item["ชื่อยา"],
+                                          truncate(item["ชื่อยา"],7),
                                           style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold),

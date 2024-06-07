@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -22,7 +23,10 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  // ตัวควบคุมการเลือก ListView ตามแจ้งเตือน
+  final ScrollController _scrollController = ScrollController();
   int _selectedIndex = 0;
+  int indexNotiDate = 0;
 
   // List of icons for the bottom navigation bar
   static const List<Map<String, dynamic>> _icons = [
@@ -30,6 +34,7 @@ class _HomeState extends State<Home> {
     {"icon": Icons.home, "label": "หน้าลัก", "page": Home()},
     {"icon": Icons.menu, "label": "เมนู", "page": menulist()},
   ];
+  // ฟังชันควบคุมแจ้งเตือน
 
   // Function to handle item tap in bottom navigation bar
   void _onItemTapped(int index) {
@@ -39,7 +44,16 @@ class _HomeState extends State<Home> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => _icons[index]["page"]),
-      );
+      ).then((_) {
+        // รีเซ็ตการสมัครรับการแจ้งเตือนเมื่อกลับมาที่หน้าเดิม
+
+        _scrollToNotification(0);
+      });
+      setState(() {
+        _notificationSubscription?.cancel();
+      });
+      print("dddd");
+      // ยกเลิกการสมัครรับการแจ้งเตือนเมื่อไปยังหน้าอื่น
     });
   }
 
@@ -47,6 +61,7 @@ class _HomeState extends State<Home> {
       FirebaseFirestore.instance.collection('medicine').snapshots();
 
   var dateOutputDate = DateTime.now();
+  StreamSubscription? _notificationSubscription;
   var selectedDate = "";
   Future<void> saveDataToFirebase(
       {required String id, required List<List<String>> state}) async {
@@ -143,14 +158,13 @@ class _HomeState extends State<Home> {
               dateTime.day == indateTime.day &&
               dateTime.hour == indateTime.hour &&
               dateTime.minute == indateTime.minute) {
-                // ป้องกันการบันทึกซ้ำในรายการที่กดไปแล้ว
-            if (stateTime[indexDateInt][indexDayInt] == "ว่าง"){
+            // ป้องกันการบันทึกซ้ำในรายการที่กดไปแล้ว
+            if (stateTime[indexDateInt][indexDayInt] == "ว่าง") {
               // กำหนดค่าใหม่เมื่อตรงกับเงื่อนไข
               stateTime[indexDateInt][indexDayInt] = newStatus;
               timeList[indexDateInt][indexDayInt] = newTime;
               swidt = true;
             }
-            
           }
           indexDayInt += 1;
         }
@@ -168,6 +182,233 @@ class _HomeState extends State<Home> {
         swidt = false;
       }
     }
+  }
+
+  memeberInt(data, indexPayload) {
+    int indexDoc = 0;
+    for (var doc in data) {
+      int indexDate = 0;
+      // 1. ดึงแจ้งเตือนมาทั้งหมดเพื่อหารายการทที่ตรงกันแล้วดึงวันทีออกมา
+      List<List<String>> timeList = List<List<String>>.from(
+          jsonDecode(doc['id แจ้งเตือน'])
+              .map((list) => List<String>.from(list)));
+
+      // // ค้นหาเพื่อนำ indexDate ไปใช้
+      for (List<String> timeData in timeList) {
+        print("indexDate $timeData");
+        for (String timeTime in timeData) {
+          // ถ้าเข้าแจ้งเตือนแจ้งว่าต้องมีแจ้งเตือนตัวนั้นทำให้ไม่จำเป็นต้องใส่ else
+          if (timeTime == indexPayload) {
+            print(
+                "$indexDoc indexDate $indexDate เจอ $timeTime == $indexPayload ");
+            return {'setDoc': indexDoc, 'indexDate': indexDate, "i see": true};
+          }
+        }
+        // เอาไว้คำนวนกับวันที่
+        indexDate += 1;
+      }
+      indexDoc += 1;
+    }
+    return {'setDoc': 0, 'indexDate': 0, "i see": true};
+  }
+
+  // หา index ที่ตรงกับ id notification
+  processDataNoti(String indexPayload) async {
+    final collection = FirebaseFirestore.instance.collection('medicine');
+    final snapshot = await collection.get();
+    // List<String> listNew = [];
+    // int indexTime = 0;
+    // int daysDifference = 0;
+    // int daysDifferenceNew = 0;
+
+    List<String> listNew = [];
+
+    Map<String, dynamic> test = await memeberInt(snapshot.docs, indexPayload);
+    DateTime? pDate;
+    // เมื่อเจอรายการ i see จะเท่ากับ 1
+    if (test["i see"]) {
+      print("test ${test["setDoc"]} ${test["indexDate"]}");
+      print(snapshot.docs[test["setDoc"]!]["id"]);
+      print(snapshot.docs[test["setDoc"]!]["วันที่เริ่มทาน"]);
+      DateTime pDate = DateFormat("dd/MM/yyyy")
+          .parse(snapshot.docs[test["setDoc"]!]["วันที่เริ่มทาน"]);
+
+      DateTime newData1 = pDate.add(Duration(days: test["indexDate"]));
+      for (var doc in snapshot.docs) {
+        DateTime startDate =
+            DateFormat("dd/MM/yyyy").parse(doc['วันที่เริ่มทาน']);
+
+        DateTime endDate =
+            DateFormat("dd/MM/yyyy").parse(doc['วันสุดท้ายที่ทาน']);
+        print("idss $startDate");
+        // อยู่ระหว่างหรือเท่ากับหรือไม่
+        if ((pDate.isAfter(startDate) || pDate.isAtSameMomentAs(startDate)) &&
+            (pDate.isBefore(endDate) || pDate.isAtSameMomentAs(endDate))) {
+          List<List<String>> timeList = List<List<String>>.from(
+              jsonDecode(doc['id แจ้งเตือน'])
+                  .map((list) => List<String>.from(list)));
+          // print(object)
+
+          // for (String dataId in timeList[test["indexDate"]!]) {
+          int dateTimeIn = 0;
+          for (DateTime date = startDate;
+              date.isBefore(endDate) || date.isAtSameMomentAs(endDate);
+              date = date.add(Duration(days: 1))) {
+            if (newData1.day == date.day &&
+                newData1.month == date.month &&
+                newData1.year == date.year) {
+              print(
+                  "idss  ${timeList[test["indexDate"]!]} ssss $newData1 indexDate=${test["indexDate"]}");
+              for (String dataId in timeList[dateTimeIn]) {
+                listNew.add(dataId);
+                print("idss aaa ${listNew}");
+              }
+            }
+            dateTimeIn += 1;
+          }
+          // listNew.add(dataId);
+          // }
+        }
+      }
+      if (pDate != null) {
+        int daysDifference = pDate.difference(dateOutputDate).inDays;
+        print("idss  ddd $listNew ");
+
+        // ได้ index สำหรับอิงการเลื่อนของวันๆนั้น
+        for (int i = 0; i < listNew.length; i++) {
+          if (listNew[i] == indexPayload) {
+            print("${listNew[i]} $i == $indexPayload   pppp");
+            return {'indexDate': daysDifference, 'indexTime': i};
+          }
+        }
+      }
+    }
+
+    // for (var doc in snapshot.docs) {
+    //   int indexDate = 0;
+    //   DateTime startDate =
+    //       DateFormat("dd/MM/yyyy").parse(doc['วันที่เริ่มทาน']);
+    //   DateTime endDate =
+    //       DateFormat("dd/MM/yyyy").parse(doc['วันสุดท้ายที่ทาน']);
+    //    DateTime now;
+    //   // 1. ดึงแจ้งเตือนมาทั้งหมดเพื่อหารายการทที่ตรงกันแล้วดึงวันทีออกมา
+    //   List<List<String>> timeList = List<List<String>>.from(
+    //     jsonDecode(doc['id แจ้งเตือน'])
+    //         .map((list) => List<String>.from(list)));
+
+    // // ค้นหาเพื่อนำ indexDate ไปใช้
+    //   for (List<String> timeData in timeList){
+    //       print("indexDate $timeData");
+    //       for(String timeTime in timeData){
+    //         // ถ้าเข้าแจ้งเตือนแจ้งว่าต้องมีแจ้งเตือนตัวนั้นทำให้ไม่จำเป็นต้องใส่ else
+    //         if (timeTime == indexPayload){
+    //           print("$indexDoc indexDate $indexDate เจอ $timeTime == $indexPayload ");
+    //           break;
+    //         }
+    //       }
+    //       // เอาไว้คำนวนกับวันที่
+    //       indexDate += 1;
+    //   }
+    //   print("Date ${indexDate}");
+    //   now = startDate.add(Duration(days: indexDate));
+    //   print('Date $now');
+    //   // print("indexDate ${indexDate}");
+    //   // if (dateOutputDate.isAfter(startDate) && dateOutputDate.isBefore(endDate)) {
+    //   //   // Payload อยู่ในช่วงระหว่าง startDate และ endDate
+    //   //   print("Payload is within the date range.");
+    //   // } else {
+    //   //   // Payload ไม่ได้อยู่ในช่วง
+    //   //   print("Payload is not within the date range.");
+    //   // }
+
+    // //   DateTime startDate =
+    // //       DateFormat("dd/MM/yyyy").parse(doc['วันที่เริ่มทาน']);
+
+    // //   // เอาวันที่ใน database หาผลต่างกับ วันที่ที่เราเลือก
+    // //   daysDifference = startDate.difference(dateOutputDate).inDays;
+    // //   DateTime newDate = startDate.add(Duration(days: daysDifference));
+    // //   daysDifferenceNew = startDate.difference(newDate).inDays;
+    // //   print("object $daysDifferenceNew yyy");
+    // //   List<List<String>> timeList = List<List<String>>.from(
+    // //       jsonDecode(doc['id แจ้งเตือน'])
+    // //           .map((list) => List<String>.from(list)));
+    // //   print("${timeList} timeList");
+    // //   for (String timeData in timeList[daysDifferenceNew]) {
+
+    // //     listNew.add(timeData);
+    //     indexDoc += 1;
+    //   }
+
+    // loop ชุดข้อมูล
+
+    // }
+    // print("$listNew listNew");
+    // for (String timeData in listNew) {
+    //   if (timeData == indexPayload) {
+    //     print("object $timeData $indexPayload $daysDifference $indexTime");
+    //     return {'indexDate': daysDifference, 'indexTime': indexTime};
+    //   }
+    //   indexTime += 1;
+    // }
+    return {'indexDate': 0, 'indexTime': 0};
+  }
+
+  // ควบคุมการเลื่อน
+  void _scrollToNotification(int index) {
+    print("index = $index");
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          index * 200.0, // Adjust this value based on your item height
+          duration: Duration(seconds: 1),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
+
+  _subscribeToNotifications() async {
+    _notificationSubscription =
+        LocalNotifications.onClickNotification.listen((payload) async {
+      print("${payload}  1010");
+
+      Map<String, int> result = await processDataNoti(payload);
+      indexNotiDate = result['indexDate']!;
+      int indexTime = result['indexTime']!;
+      _scrollToNotification(indexTime);
+      print("${dateOutputDate.day} ${indexNotiDate} 888888");
+      setState(() {
+        dateOutputDate = dateOutputDate.add(Duration(days: indexNotiDate));
+      });
+      print("${dateOutputDate.day} 999999");
+    });
+  }
+
+  void _initializeNotifications() async {
+    await _subscribeToNotifications();
+  }
+
+  // ดึงเพื่อค้นหารายการ noti ที่ต้องการ
+  @override
+  void initState() {
+    super.initState();
+    print("initState");
+    _initializeNotifications();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    print("didChangeDependencies");
+    _initializeNotifications();
+  }
+
+  // เพื่อปิดการใช้งานที่ค้างอยู่ใน LocalNotifications
+  @override
+  void dispose() {
+    _notificationSubscription?.cancel();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -205,6 +446,8 @@ class _HomeState extends State<Home> {
                 context,
                 MaterialPageRoute(builder: (context) => const Addmedicine()),
               );
+              _notificationSubscription?.cancel();
+              _scrollToNotification(0);
             },
           ),
         ],
@@ -307,6 +550,7 @@ class _HomeState extends State<Home> {
                     }
                     final data = snapshot.requireData;
                     return ListView.builder(
+                      controller: _scrollController,
                       itemCount: data.size,
                       itemBuilder: (context, index) {
                         DateTime startDateTime = DateFormat("dd/MM/yyyy")
@@ -334,9 +578,10 @@ class _HomeState extends State<Home> {
                               jsonDecode(data.docs[index]['เวลาคลิก'])
                                   .map((list) => List<String>.from(list)));
 
-                          List<List<String>> idNotiList = List<List<String>>.from(
-                              jsonDecode(data.docs[index]['id แจ้งเตือน'])
-                                  .map((list) => List<String>.from(list)));
+                          List<List<String>> idNotiList =
+                              List<List<String>>.from(
+                                  jsonDecode(data.docs[index]['id แจ้งเตือน'])
+                                      .map((list) => List<String>.from(list)));
                           // print("iiiiii${stateTime}");
                           // for (int number = 0;number < data.docs[index]['เวลาแจ้งเตือน'].length;number++)
                           // print(
@@ -451,8 +696,14 @@ class _HomeState extends State<Home> {
                                                             selectTime:
                                                                 "${selectDateTime.day}/${selectDateTime.month}/${selectDateTime.year} ${data.docs[index]['เวลาแจ้งเตือน'][number]}",
                                                           );
-                                                          print("kkk ${idNotiList[allday][number]}");
-                                                          LocalNotifications.cancelNotificationById(int.parse(idNotiList[allday][number]));
+                                                          print(
+                                                              "kkk ${idNotiList[allday][number]}");
+                                                          LocalNotifications
+                                                              .cancelNotificationById(
+                                                                  int.parse(idNotiList[
+                                                                          allday]
+                                                                      [
+                                                                      number]));
                                                           // await saveDataToFirebase(
                                                           //   id: "${data.docs[index]['id']}",
                                                           //   state: stateTime,
@@ -500,7 +751,12 @@ class _HomeState extends State<Home> {
                                                             selectTime:
                                                                 "${selectDateTime.day}/${selectDateTime.month}/${selectDateTime.year} ${data.docs[index]['เวลาแจ้งเตือน'][number]}",
                                                           );
-                                                          LocalNotifications.cancelNotificationById(int.parse(idNotiList[allday][number]));
+                                                          LocalNotifications
+                                                              .cancelNotificationById(
+                                                                  int.parse(idNotiList[
+                                                                          allday]
+                                                                      [
+                                                                      number]));
                                                         },
                                                         child: const Text(
                                                           "ไม่รับยา", // แสดงข้อความ "ไม่รับยา"
@@ -533,6 +789,11 @@ class _HomeState extends State<Home> {
                   context,
                   MaterialPageRoute(builder: (context) => const Addmedicine()),
                 );
+                _scrollToNotification(0);
+                print("กลับมา");
+                setState(() {
+                  _notificationSubscription?.cancel();
+                });
               },
               style: ElevatedButton.styleFrom(
                 textStyle: const TextStyle(fontSize: 24),

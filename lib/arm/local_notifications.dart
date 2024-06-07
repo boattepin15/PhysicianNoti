@@ -16,7 +16,6 @@ class LocalNotifications {
   }
 
   static void onNotificationClick(NotificationResponse notificationResponse) {
-    
     onClickNotification.add(notificationResponse.payload!);
   }
 

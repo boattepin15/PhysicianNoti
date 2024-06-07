@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
@@ -335,7 +336,7 @@ class _listmedicineState extends State<listmedicine> {
           "${selectDate.day}/${selectDate.month}/${selectDate.year}",
       'สถานะ': jsonEncode(status),
       'id แจ้งเตือน': jsonEncode(idNoti),
-      'เวลาคลิก':jsonEncode(statusclick)
+      'เวลาคลิก': jsonEncode(statusclick)
     });
   }
 
@@ -390,8 +391,8 @@ class _listmedicineState extends State<listmedicine> {
         idNoti.add(List<String>.generate(
             noitText.length, (index) => generateRandomInt().toString()));
         status.add(List<String>.generate(noitText.length, (index) => "ว่าง"));
-        statusclick.add(List<String>.generate(noitText.length, (index) => "ว่าง"));
-        
+        statusclick
+            .add(List<String>.generate(noitText.length, (index) => "ว่าง"));
       }
     }
     // update แจ้งเตื่อนลงเครื่อง
@@ -424,7 +425,7 @@ class _listmedicineState extends State<listmedicine> {
           "${selectDate.day}/${selectDate.month}/${selectDate.year}",
       'สถานะ': jsonEncode(status),
       'id แจ้งเตือน': jsonEncode(idNoti),
-      'เวลาคลิก':jsonEncode(statusclick)
+      'เวลาคลิก': jsonEncode(statusclick)
     });
   }
 
@@ -535,6 +536,15 @@ class _listmedicineState extends State<listmedicine> {
     });
   }
 
+  // กำหนดจำนวนสูงสุดในการแสดงตัวอักษร
+  String truncate(String text, int length) {
+    if (text.length <= length) {
+      return text;
+    } else {
+      return '${text.substring(0, length)}..';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -623,8 +633,9 @@ class _listmedicineState extends State<listmedicine> {
                                     });
                                   },
                                   child: Text(
-                                    '${data.docs[index]['ชื่อยา']}',
-                                    style: const TextStyle(fontSize: 25),
+                                    truncate(
+                                        '${data.docs[index]['ชื่อยา']}', 5),
+                                    style: const TextStyle(fontSize: 22),
                                   ),
                                 )
                               : Padding(
@@ -672,9 +683,10 @@ class _listmedicineState extends State<listmedicine> {
                                       amountUI[index] = !amountUI[index];
                                     });
                                   },
-                                  child: Text(
+                                  child: AutoSizeText(
                                       " ${data.docs[index]['ปริมาณยาที่ทานต่อครั้ง']} ",
-                                      style: const TextStyle(fontSize: 25)),
+                                      style: const TextStyle(fontSize: 22),
+                                      minFontSize: 12,maxLines: 1,overflow: TextOverflow.ellipsis,),
                                 )
                               : SizedBox(
                                   width: 30.0,
@@ -725,10 +737,10 @@ class _listmedicineState extends State<listmedicine> {
                                     });
                                   },
                                   child: Text(" ${data.docs[index]['หน่วยยา']}",
-                                      style: const TextStyle(fontSize: 25)),
+                                      style: const TextStyle(fontSize: 22)),
                                 )
                               : SizedBox(
-                                  width: 130.0,
+                                  width: 110.0,
                                   height: 70.0,
                                   child: DropdownButtonFormField<String>(
                                     value: selectedDropdownValue[index],
@@ -804,8 +816,8 @@ class _listmedicineState extends State<listmedicine> {
                                             .map((e) => List<String>.from(e))
                                             .toList();
                                     List<List<String>> statusclick =
-                                        (jsonDecode(data.docs[index]['เวลาคลิก'])
-                                                as List)
+                                        (jsonDecode(data.docs[index]
+                                                ['เวลาคลิก']) as List)
                                             .map((e) => List<String>.from(e))
                                             .toList();
                                     if (resultSelect.isBefore(strDayEnd) ||
@@ -835,6 +847,9 @@ class _listmedicineState extends State<listmedicine> {
                                 },
                                 child: Text(
                                   'เริ่มทาน ${data.docs[index]['วันที่เริ่มทาน']} ถึง ',
+                                  style: TextStyle(
+                                    fontSize: 12.0
+                                  ),
                                 ),
                               ),
                               InkWell(
@@ -862,8 +877,8 @@ class _listmedicineState extends State<listmedicine> {
                                             .map((e) => List<String>.from(e))
                                             .toList();
                                     List<List<String>> statusclick =
-                                        (jsonDecode(data.docs[index]['เวลาคลิก'])
-                                                as List)
+                                        (jsonDecode(data.docs[index]
+                                                ['เวลาคลิก']) as List)
                                             .map((e) => List<String>.from(e))
                                             .toList();
                                     if (resultSelect.isAfter(strDayStart) ||
@@ -893,6 +908,9 @@ class _listmedicineState extends State<listmedicine> {
                                 },
                                 child: Text(
                                   '${data.docs[index]['วันสุดท้ายที่ทาน']} ',
+                                  style: TextStyle(
+                                    fontSize: 12.0
+                                  ),
                                 ),
                               ),
                             ],
@@ -973,9 +991,28 @@ class _listmedicineState extends State<listmedicine> {
                         children: [
                           nameUI[index] || amountUI[index]
                               ? IconButton(
-                                  icon: const Icon(Icons.check),
+                                  icon: const Icon(Icons.check,color: Colors.green,),
                                   onPressed: () {
+                                    // อัพเดต 2 ค่าอยู่แล้ว
                                     _saveChanges(index, data.docs[index]);
+                                  },
+                                )
+                              : IconButton(
+                                  icon: const Icon(Icons.edit),
+                                  onPressed: () {
+                                    // edit รายการ
+                                    setState(() {
+                                      // แสดงให้แก้ไข 2 รายการ
+                                      nameUI[index] = !nameUI[index];
+                                      amountUI[index] = !amountUI[index];
+                                    });
+                                  },
+                                ),
+                          nameUI[index] || amountUI[index]
+                              ? IconButton(
+                                  icon: const Icon(Icons.close,color: Colors.red),
+                                  onPressed: () {
+                                    _cancelChanges(index);
                                   },
                                 )
                               : IconButton(
@@ -1010,14 +1047,6 @@ class _listmedicineState extends State<listmedicine> {
                                     );
                                   },
                                 ),
-                          nameUI[index] || amountUI[index]
-                              ? IconButton(
-                                  icon: const Icon(Icons.close),
-                                  onPressed: () {
-                                    _cancelChanges(index);
-                                  },
-                                )
-                              : Container(),
                         ],
                       ),
                     ),
